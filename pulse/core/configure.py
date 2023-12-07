@@ -15,9 +15,10 @@ def configure() -> None:
     Returns:
         None
     """
-    git_name = None
-    git_token = None
-    click.echo('\tWelcome to Pulse configuration manager! This is only used for github credentials e.g to publish a repository.')
+    click.echo(
+        '\tWelcome to Pulse configuration manager!'
+        'This is only used for github credentials e.g to publish a repository.'
+    )
     if config.exists():
         config.modify(load_data=True)
 

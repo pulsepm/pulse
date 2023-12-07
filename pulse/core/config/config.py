@@ -1,7 +1,8 @@
 import os
+import subprocess
+import sys
 import toml
 import click
-import subprocess
 from .choices import prompt_choices
 
 toml_data = None
@@ -86,8 +87,8 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
         write(toml_data, 'w')
 
     elif choice == 4:
-        exit()
-    
+        sys.exit()
+
     else:
         click.echo('Bravo, great! You\'ve choosen invalid option')
 
@@ -119,12 +120,12 @@ def load() -> dict:
     Raises:
         toml.TomlDecodeError: If there's an error decoding TOML data from the file.
     """
+    global toml_data
     home_dir = os.path.expanduser("~")
     config_path = os.path.join(home_dir, 'Pulse Package Configuration', '.config')
     file_name = 'pulseconfig.toml'
     full_path = os.path.join(config_path, file_name)
 
-    toml_data = None
     try:
         with open(full_path, 'r') as file:
             toml_data = toml.load(file)

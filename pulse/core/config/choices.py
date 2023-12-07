@@ -31,4 +31,3 @@ def prompt_choices(welcome: bool = False) -> int:
 
     choice = click.prompt('Enter your choice.', type=click.IntRange(1,4))
     return choice
-    
