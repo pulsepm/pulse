@@ -37,12 +37,8 @@ def init(gamemode: bool, library: bool) -> None:
     if library and gamemode:
         click.echo('Can\'t use both flags. Either initialize library or gamemode.')
     elif gamemode:
-        name = click.prompt(f'Your name for publishing? Should be github username', default=default_name)
-        if default_name == 'NO_NAME_BRO':
-            click.echo('Fatal error: Input your name. Project hasn\'t been created.')
-
-        name = default_name
-            
+        name = click.prompt(f'Your name for publishing? Should be github username', default=default_name if default_name != 'NO_NAME_BRO' else None)
+ 
         project = click.prompt('Enter the name for your gamemode project. It will be used as a project name')
         repo = click.prompt('Enter the name for your github repository. Could be left blank if you won\'t publish it')
         

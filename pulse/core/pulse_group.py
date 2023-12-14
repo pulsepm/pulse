@@ -1,5 +1,6 @@
 import click
 from pulse.init.init import init
+from pulse.run.run import run
 from .configure import configure
 
 @click.group()
@@ -9,3 +10,4 @@ def pulse():
 
 pulse.add_command(init)
 pulse.add_command(configure)
+pulse.add_command(run)
