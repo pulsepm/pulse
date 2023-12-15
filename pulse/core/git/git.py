@@ -4,6 +4,7 @@ import os
 from zipfile import ZipFile
 import tarfile
 import shutil
+import platform
 
 def clone_github_repo(repo_url, destination_folder):
     try:
@@ -45,6 +46,7 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name):
     
     if response.status_code == 200:
         print('Asset download successful')
+        system = platform.system()
         asset_path = os.path.join(target_folder, asset_name)
 
         with open(asset_path, 'wb') as asset_file:
@@ -66,13 +68,14 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name):
         print(f"Asset downloaded and extracted to: {target_folder}")
         server_folder = os.path.join(target_folder, 'Server')
         components = os.path.join(server_folder, 'components')
-        server_exe = os.path.join(server_folder, 'omp-server.exe')
-        server_pdb = os.path.join(server_folder, 'omp-server.pdb')
         config_json = os.path.join(server_folder, 'config.json')
+        server_exe = os.path.join(server_folder, 'omp-server.exe' if system == "Windows" else 'omp-server')
+        if system == "Windows":
+            server_pdb = os.path.join(server_folder, 'omp-server.pdb')
+            shutil.move(server_pdb, target_folder)
         
         shutil.move(components, target_folder)
         shutil.move(server_exe, target_folder)
-        shutil.move(server_pdb, target_folder)
         shutil.move(config_json, target_folder)
 
         shutil.rmtree(server_folder)

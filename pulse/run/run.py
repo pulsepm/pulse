@@ -10,11 +10,7 @@ def run() -> int:
     # check for omp server
     path = os.getcwd()
     system = platform.system()
-    file_name = None
-    if system == "Windows":
-        file_name = 'omp-server.exe'
-    elif system == "Linux":
-        file_name = 'omp-server'
+    file_name = os.path.join(path, 'omp-server.exe' if system == "Windows" else 'omp-server')
 
     omp = os.path.join(path, file_name)
     if not os.path.exists(omp):
@@ -23,11 +19,11 @@ def run() -> int:
         git.download_and_unzip_github_release('openmultiplayer', 'open.mp', 'v1.1.0.2612', 'open.mp-win-x86.zip' if system == "Windows" else 'open.mp-linux-x86.tar.gz')
         
         try:
-            subprocess.run('omp-server.exe' if system == "Windows" else 'omp-server', check=True)
+            subprocess.run(file_name, check=True)
         except subprocess.CalledProcessError as e:
             print(f"Error: {e}")
     else:
         try:
-            subprocess.run('omp-server.exe' if system == "Windows" else 'omp-server', check=True)
+            subprocess.run(file_name, check=True)
         except subprocess.CalledProcessError as e:
             print(f"Error: {e}")
