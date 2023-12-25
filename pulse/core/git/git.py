@@ -47,8 +47,8 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
     if response.status_code == 200:
         print('Asset download successful')
         system = platform.system()
+        os.makedirs(target_folder, exist_ok=True)
         asset_path = os.path.join(target_folder, asset_name)
-        os.makedirs(asset_path, exist_ok=True)
 
         with open(asset_path, 'wb') as asset_file:
             asset_file.write(response.content)
