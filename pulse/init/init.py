@@ -28,6 +28,7 @@ def init(gamemode: bool, library: bool) -> None:
     repo = 'boiler'
     project = 'boiler'
     default_name = 'NO_NAME_BRO'
+    data = None
 
     # check if .config exists and then load default_name.
     if config.exists():
@@ -38,17 +39,20 @@ def init(gamemode: bool, library: bool) -> None:
         click.echo('Can\'t use both flags. Either initialize library or gamemode.')
     elif gamemode:
         name = click.prompt(f'Your name for publishing? Should be github username', default=default_name if default_name != 'NO_NAME_BRO' else None)
- 
+        data['last_username'] = name
         project = click.prompt('Enter the name for your gamemode project. It will be used as a project name')
         repo = click.prompt('Enter the name for your github repository. Could be left blank if you won\'t publish it')
         
         initialize(project, TYPE_GAMEMODE, name, repo)
+        config.write(data, 'w')
     elif library:
-        name = click.prompt('Your name for publishing?')
+        name = click.prompt(f'Your name for publishing? Should be github username', default=default_name if default_name != 'NO_NAME_BRO' else None)
+        data['last_username'] = name
         project = click.prompt('Enter the name for your library project. It will be used as a project name')
         repo = click.prompt('Enter the name for your github repository. Could be left blank if you won\'t publish it')
 
         initialize(project, TYPE_LIBRARY, name, repo)
+        config.write(data, 'w')
     else:
         click.echo('Invalid syntax. Use pulse --help')
 

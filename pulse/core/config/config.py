@@ -3,6 +3,7 @@ import subprocess
 import sys
 import toml
 import click
+from .user_dir import HOME_DIR, CONFIG_PATH
 from .choices import prompt_choices
 
 toml_data = None
@@ -14,11 +15,10 @@ def exists() -> bool:
     Returns:
         bool: True if the configuration file exists, False otherwise.
     """
-    home_dir = os.path.expanduser("~")
-    config_path = os.path.join(home_dir, 'Pulse Package Configuration', '.config', 'pulseconfig.toml')
-    print(config_path)
+    full_path = os.path.join(CONFIG_PATH, 'pulseconfig.toml')
+    print(CONFIG_PATH)
 
-    return os.path.exists(config_path)
+    return os.path.exists(full_path)
 
 def write(data: dict, mode: str) -> None:
     """
@@ -31,18 +31,15 @@ def write(data: dict, mode: str) -> None:
     Raises:
         PermissionError: If there's a permission error during file writing.
     """
-    home_dir = os.path.expanduser("~")
-    config_path = os.path.join(home_dir, 'Pulse Package Configuration', '.config')
-    file_name = 'pulseconfig.toml'
-    full_path = os.path.join(config_path, file_name)
+    full_path = os.path.join(CONFIG_PATH, 'pulseconfig.toml')
 
     try:
-        os.makedirs(config_path, exist_ok=True)
+        os.makedirs(CONFIG_PATH, exist_ok=True)
 
         with open(full_path, mode) as toml_file:
             toml.dump(data, toml_file)
 
-        subprocess.run(["attrib", "+H", config_path], check=True)
+        subprocess.run(["attrib", "+H", CONFIG_PATH], check=True)
 
     except PermissionError as pe:
         print('Permission error: ' + pe)
@@ -121,10 +118,7 @@ def load() -> dict:
         toml.TomlDecodeError: If there's an error decoding TOML data from the file.
     """
     global toml_data
-    home_dir = os.path.expanduser("~")
-    config_path = os.path.join(home_dir, 'Pulse Package Configuration', '.config')
-    file_name = 'pulseconfig.toml'
-    full_path = os.path.join(config_path, file_name)
+    full_path = os.path.join(CONFIG_PATH, 'pulseconfig.toml')
 
     try:
         with open(full_path, 'r') as file:

@@ -13,8 +13,8 @@ def clone_github_repo(repo_url, destination_folder):
     except git.GitCommandError as e:
         print(f"Error cloning repository: {e}")
 
-def download_and_unzip_github_release(owner, repo, tag, asset_name):
-    target_folder = os.getcwd()
+def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
+    target_folder = target
 
     # Get the release information
     api_url = f"https://api.github.com/repos/{owner}/{repo}/releases/tags/{tag}"
@@ -48,6 +48,7 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name):
         print('Asset download successful')
         system = platform.system()
         asset_path = os.path.join(target_folder, asset_name)
+        os.makedirs(asset_path, exist_ok=True)
 
         with open(asset_path, 'wb') as asset_file:
             asset_file.write(response.content)
