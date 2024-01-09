@@ -3,8 +3,6 @@ import requests
 import os
 from zipfile import ZipFile
 import tarfile
-import shutil
-import platform
 
 def clone_github_repo(repo_url, destination_folder):
     try:
@@ -46,7 +44,6 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
     
     if response.status_code == 200:
         print('Asset download successful')
-        system = platform.system()
         os.makedirs(target_folder, exist_ok=True)
         asset_path = os.path.join(target_folder, asset_name)
 
@@ -67,19 +64,7 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
         # Remove the downloaded asset file if needed
         os.remove(asset_path)
         print(f"Asset downloaded and extracted to: {target_folder}")
-        server_folder = os.path.join(target_folder, 'Server')
-        components = os.path.join(server_folder, 'components')
-        config_json = os.path.join(server_folder, 'config.json')
-        server_exe = os.path.join(server_folder, 'omp-server.exe' if system == "Windows" else 'omp-server')
-        if system == "Windows":
-            server_pdb = os.path.join(server_folder, 'omp-server.pdb')
-            shutil.move(server_pdb, target_folder)
         
-        shutil.move(components, target_folder)
-        shutil.move(server_exe, target_folder)
-        shutil.move(config_json, target_folder)
-
-        shutil.rmtree(server_folder)
     else:
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
