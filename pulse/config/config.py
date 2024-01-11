@@ -3,8 +3,8 @@ import subprocess
 import sys
 import toml
 import click
-from .user_dir import HOME_DIR, CONFIG_PATH
-from .choices import prompt_choices
+from pulse.core.core_dir import HOME_DIR, CONFIG_PATH
+from .config_choices import prompt_choices
 
 toml_data = None
 

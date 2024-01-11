@@ -1,5 +1,5 @@
 import click
-import pulse.core.config.config as config
+import pulse.config.config as config
 
 @click.command
 def configure() -> None:

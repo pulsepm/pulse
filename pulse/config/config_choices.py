@@ -6,7 +6,7 @@ def prompt_choices(welcome: bool = False) -> int:
 
     Args:
         welcome (bool): If True, display a welcome message indicating that the configuration exists.
-                        If False, only display the menu.
+            If False, only display the menu.
 
     Returns:
         int: The user's choice as an integer.
