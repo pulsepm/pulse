@@ -1,6 +1,6 @@
 import os
 import click
-import pulse.core.config.config as config
+import pulse.config.config as config
 from pulse.project.initialize import initialize, TYPE_GAMEMODE, TYPE_LIBRARY
 
 @click.command
