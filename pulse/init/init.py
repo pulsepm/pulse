@@ -1,6 +1,7 @@
 import os
 import click
 import pulse.config.config as config
+from pulse.core.git.git import create_and_push_repository
 from pulse.project.initialize import initialize, TYPE_GAMEMODE, TYPE_LIBRARY
 
 @click.command
@@ -50,9 +51,12 @@ def init(gamemode: bool, library: bool) -> None:
         data['last_username'] = name
         project = click.prompt('Enter the name for your library project. It will be used as a project name')
         repo = click.prompt('Enter the name for your github repository. Could be left blank if you won\'t publish it')
+        create = click.prompt('Enter whether to initialize github repo (Input (y)es or (n)o?)', default='y')
 
         initialize(project, TYPE_LIBRARY, name, repo)
         config.write(data, 'w')
+        if create == 'y':
+            create_and_push_repository(name, repo, data['token'])
     else:
         click.echo('Invalid syntax. Use pulse --help')
 
