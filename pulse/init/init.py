@@ -55,13 +55,12 @@ def init(gamemode: bool, library: bool) -> None:
 
         initialize(project, TYPE_LIBRARY, name, repo)
         config.write(data, 'w')
-        if create == 'y':
+        if create == 'y' or 'yes':
             create_and_push_repository(name, repo, data['token'])
+        elif create == 'n' or 'no':
+            pass
+        else:
+            click.echo('Since you input nonsense, we assume yes.')
+            
     else:
         click.echo('Invalid syntax. Use pulse --help')
-
-# Znaci skines sa githuba release odabrane verzije
-# Skines je gde je pokrenut init
-# Deletujes qawno folder
-# napravis gamemodes folder
-# Napravis filterscripts folder
