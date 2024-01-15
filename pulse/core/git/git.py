@@ -87,51 +87,18 @@ def check_github_repo_exists(username, repo_name):
     else:
         print(f"Failed to check the repository. Status code: {response.status_code}")
 
-def create_and_push_repository(username, repository_name, access_token):
+def create_repository(username, repository_name, access_token):
     try:
-        # Check if the repository already exists on GitHub
-        repo_url = f'https://api.github.com/repos/{username}/{repository_name}'
-        response = requests.get(repo_url, headers={'Authorization': f'token {access_token}'})
-        
-        if response.status_code == 200:
-            print(f"Repository '{repository_name}' already exists on GitHub.")
-            return
-        elif response.status_code != 404:
-            print(f"Failed to check repository existence. Status code: {response.status_code}")
-            return
+        create_repo_url = f'https://api.github.com/user/repos'
+        headers = {'Authorization': f"token {access_token}"}
+        data = {'name': repository_name, 'auto_init': False, 'private': False}
 
-        # Initialize a new repository
-        repo = git.Repo.init('')
+        response = requests.post(create_repo_url, headers=headers, json=data)
 
-        # Stage and commit changes
-        repo.git.add(A=True)
-        repo.git.commit('-m', 'Initial commit')
-
-        # Check if the 'origin' remote already exists
-        remotes = repo.remotes
-        origin_remote = next((r for r in remotes if r.name == 'origin'), None)
-
-        if origin_remote is None:
-            # Create a new remote repository on GitHub
-            if access_token:
-                create_repo_url = f'https://api.github.com/user/repos'
-                headers = {'Authorization': f"token {access_token}"}
-                data = {'name': repository_name, 'auto_init': True, 'private': False}
-
-                response = requests.post(create_repo_url, headers=headers, json=data)
-
-                if response.status_code == 201:
-                    print(f"Repository '{repository_name}' created on GitHub successfully.")
-                    # Add the 'origin' remote
-                    repo.create_remote('origin', f'https://github.com/{username}/{repository_name}.git')
-                    print("Remote 'origin' added successfully.")
-                else:
-                    print(f"Failed to create repository on GitHub. Status code: {response.status_code}, Message: {response.text}")
-            else:
-                print("Error: GitHub access token is required to create a remote repository.")
+        if response.status_code == 201:
+            print(f"Repository '{repository_name}' created on GitHub successfully.")
+            print(f"You can visit it via: https://github.com/{username}/{repository_name}")
         else:
-            print("Remote 'origin' already exists. Skipping remote addition.")
-    except GitCommandError as e:
-        print(f"GitCommandError: {e}")
+            print(f"Failed to create repository on GitHub. Status code: {response.status_code}, Message: {response.text}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")

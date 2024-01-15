@@ -1,7 +1,7 @@
 import os
 import click
 import pulse.config.config as config
-from pulse.core.git.git import create_and_push_repository
+from pulse.core.git.git import create_repository
 from pulse.project.initialize import initialize, TYPE_GAMEMODE, TYPE_LIBRARY
 
 @click.command
@@ -55,12 +55,13 @@ def init(gamemode: bool, library: bool) -> None:
 
         initialize(project, TYPE_LIBRARY, name, repo)
         config.write(data, 'w')
-        if create == 'y' or 'yes':
-            create_and_push_repository(name, repo, data['token'])
-        elif create == 'n' or 'no':
+        if create == 'y' or create == 'yes':
+            create_repository(name, repo, data['token'])
+        elif create == 'n' or create == 'no':
             pass
         else:
             click.echo('Since you input nonsense, we assume yes.')
+            create_repository(name, repo, data['token'])
             
     else:
         click.echo('Invalid syntax. Use pulse --help')
