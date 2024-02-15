@@ -41,7 +41,7 @@ def init(gamemode: bool, library: bool) -> None:
     elif gamemode:
         name = click.prompt(f'Your name for publishing? Should be github username', default=default_name if default_name != 'NO_NAME_BRO' else None)
         data['last_username'] = name
-        project = click.prompt('Enter the name for your gamemode project. It will be used as a project name')
+        project = click.prompt('Enter the name for your gamemode. It will be used as a project name')
         repo = click.prompt('Enter the name for your github repository. Could be left blank if you won\'t publish it')
         
         initialize(project, TYPE_GAMEMODE, name, repo)
@@ -49,7 +49,7 @@ def init(gamemode: bool, library: bool) -> None:
     elif library:
         name = click.prompt(f'Your name for publishing? Should be github username', default=default_name if default_name != 'NO_NAME_BRO' else None)
         data['last_username'] = name
-        project = click.prompt('Enter the name for your library project. It will be used as a project name')
+        project = click.prompt('Enter the name for your project. It will be used as a project name')
         repo = click.prompt('Enter the name for your github repository. Could be left blank if you won\'t publish it')
         create = click.prompt('Enter whether to initialize github repo (Input (y)es or (n)o?)', default='y')
 
