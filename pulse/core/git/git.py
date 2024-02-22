@@ -24,11 +24,11 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
     # Get the release information
     api_url = f"https://api.github.com/repos/{owner}/{repo}/releases/tags/{tag}"
     response = requests.get(api_url)
-    
+
     if response.status_code != 200:
         print(f"Failed to get release information. HTTP Status Code: {response.status_code}")
         return
-    
+
     release_info = response.json()
 
     # Find the asset download URL
@@ -48,7 +48,7 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
     except requests.exceptions.RequestException as e:
         print(f"Failed to connect to the server: {e}")
         return
-    
+
     if response.status_code == 200:
         print('Asset download successful')
         os.makedirs(target_folder, exist_ok=True)
@@ -63,7 +63,7 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
                 zip_ref.extractall(target_folder)
         elif str(asset_name).endswith('.tar.gz'):
             with tarfile.open(asset_path, 'r:gz') as tar_ref:
-                tar_ref.extractall(target_folder) 
+                tar_ref.extractall(target_folder)
         else:
             print(f"Unsupported asset type: {asset_name}")
             return
@@ -71,10 +71,9 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
         # Remove the downloaded asset file if needed
         os.remove(asset_path)
         print(f"Asset downloaded and extracted to: {target_folder}")
-        
+
     else:
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
-
 
 def check_github_repo_exists(username, repo_name):
     url = f'https://api.github.com/repos/{username}/{repo_name}'
@@ -102,3 +101,23 @@ def create_repository(username, repository_name, access_token):
             print(f"Failed to create repository on GitHub. Status code: {response.status_code}, Message: {response.text}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
+def get_github_compiler_releases() -> list:
+    try:
+        response = requests.get("https://api.github.com/repos/pulsepm/compiler/tags")
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    else:
+        return response.json()
+
+def get_github_runtime_releases() -> list:
+    try:
+        response = requests.get("https://api.github.com/repos/openmultiplayer/open.mp/tags")
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    else:
+        return response.json()
