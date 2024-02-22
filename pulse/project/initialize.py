@@ -95,7 +95,7 @@ def initialize(name: str, type: int, publisher: str, repo_name: str, entry: str 
         'publisher': publisher,
         'repo': repo_name
     }
-    
+
     data = {
         'project': project_table
     }
