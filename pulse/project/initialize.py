@@ -75,7 +75,7 @@ install_part_library = """
 `pulse install ^publisher^/^package_name^`
 """
 
-def initialize(name: str, type: int, publisher: str, repo_name: str, entry: str = 'main.pwn') -> None:
+def initialize(name: str, publisher: str, repo_name: str, entry: str = 'main.pwn') -> None:
     """
     Initialize a new Project instance.
 
@@ -84,14 +84,10 @@ def initialize(name: str, type: int, publisher: str, repo_name: str, entry: str 
         type (int): The type of the project (1 for gamemode, 2 for library).
         publisher (str): The publisher or creator of the project.
         repo_name (str): The name of the repository.
-
-    Raises:
-        ValueError: If an invalid project type is provided.
     """
 
     project_table = {
         'name': name,
-        'type': 'gamemode' if type == TYPE_GAMEMODE else 'library',
         'publisher': publisher,
         'repo': repo_name
     }
@@ -114,5 +110,5 @@ def initialize(name: str, type: int, publisher: str, repo_name: str, entry: str 
     with open(md_file, 'w') as md:
         md.write(markdown_content.replace('^package_name^', f'{name}')
         .replace('^publisher^', f'{publisher}')
-        .replace('in_part_1', install_part_gamemode if type == TYPE_GAMEMODE else install_part_library))
+        .replace('in_part_1', install_part_library))
 
