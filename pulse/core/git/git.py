@@ -7,9 +7,9 @@ import tarfile
 from pulse.config.config import load
 from git.exc import GitCommandError
 
-def clone_github_repo(repo_url, destination_folder, no_git=False):
+def clone_github_repo(repo_url, destination_folder, no_git=True):
     try:
-        git.Repo.clone_from(repo_url, destination_folder, force=True)
+        git.Repo.clone_from(repo_url, destination_folder)
 
         if no_git is True:
             shutil.rmtree(os.path.join(destination_folder, '.git'))
