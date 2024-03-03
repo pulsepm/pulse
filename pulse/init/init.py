@@ -2,7 +2,7 @@ import os
 import click
 import pulse.config.config as config
 from pulse.core.git.git import create_repository
-from pulse.project.initialize import initialize, TYPE_GAMEMODE, TYPE_LIBRARY
+from pulse.project.initialize import initialize
 
 @click.command
 def init() -> None:
@@ -16,18 +16,12 @@ def init() -> None:
     Returns:
         None
 
-    Usage:
-        pulse init -g  # Initialize a game mode package (or --gamemode)
-        pulse init -l  # Initialize a library package (or --library)
-
-    Raises:
-        click.exceptions.UsageError: If both -g (--gamemode) and -l (--library) flags are used simultaneously.
     """
     name = 'boiler'
     repo = 'boiler'
     project = 'boiler'
     default_name = 'NO_NAME_BRO'
-    data = None
+    data = {}
 
     # check if .config exists and then load default_name.
     if config.exists():
