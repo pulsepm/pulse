@@ -1,7 +1,8 @@
 import git
 import requests
 import os
-import shutil
+import platform
+import subprocess
 from zipfile import ZipFile
 import tarfile
 from pulse.config.config import load
@@ -12,7 +13,11 @@ def clone_github_repo(repo_url, destination_folder, no_git=True):
         git.Repo.clone_from(repo_url, destination_folder)
 
         if no_git is True:
-            shutil.rmtree(os.path.join(destination_folder, '.git'))
+            path = os.path.join(destination_folder, '.git')
+            if platform.system() == "Windows":
+                subprocess.run(["cmd", "/c", "rd", "/s", "/q", path], check=True)
+            else: 
+                subprocess.run(["rm", "-rf", path], check=True)
 
         print(f"Repository cloned successfully to {destination_folder}")
     except git.GitCommandError as e:
