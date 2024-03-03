@@ -16,12 +16,6 @@ def init() -> None:
     Returns:
         None
 
-    Usage:
-        pulse init -g  # Initialize a game mode package (or --gamemode)
-        pulse init -l  # Initialize a library package (or --library)
-
-    Raises:
-        click.exceptions.UsageError: If both -g (--gamemode) and -l (--library) flags are used simultaneously.
     """
     name = 'boiler'
     repo = 'boiler'

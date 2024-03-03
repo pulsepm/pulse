@@ -10,7 +10,6 @@ def initialize(name: str, publisher: str, repo_name: str, entry: str = 'main.pwn
 
     Args:
         name (str): The name of the project.
-        type (int): The type of the project (1 for gamemode, 2 for library).
         publisher (str): The publisher or creator of the project.
         repo_name (str): The name of the repository.
     """
@@ -32,6 +31,15 @@ def initialize(name: str, publisher: str, repo_name: str, entry: str = 'main.pwn
     current_dir = os.getcwd()
     git.clone_github_repo('https://github.com/pulsepm/boilerplate', current_dir)
     toml_config = os.path.join(current_dir, 'pulse.toml')
+    readme = os.path.join(current_dir, 'README.md')
 
     with open(toml_config, 'w') as toml_file:
         toml.dump(data, toml_file)
+
+    with open(readme, 'r+') as md_file:
+        md_data = md_file.read()
+        md_data = md_data.replace('^package_name^', project_table['name']).replace('^publisher^', project_table['publisher'])
+        md_file.seek(0)
+        md_file.truncate(0)
+        md_file.write(md_data)
+        
