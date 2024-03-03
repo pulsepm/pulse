@@ -27,7 +27,7 @@ def init() -> None:
     repo = 'boiler'
     project = 'boiler'
     default_name = 'NO_NAME_BRO'
-    data = None
+    data = {}
 
     # check if .config exists and then load default_name.
     if config.exists():
