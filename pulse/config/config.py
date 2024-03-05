@@ -3,10 +3,10 @@ import subprocess
 import sys
 import toml
 import click
-from pulse.core.core_dir import HOME_DIR, CONFIG_PATH
+from pulse.core.core_dir import CONFIG_PATH
 from .config_choices import prompt_choices
-
 toml_data = None
+
 
 def exists() -> bool:
     """
@@ -19,6 +19,7 @@ def exists() -> bool:
     print(CONFIG_PATH)
 
     return os.path.exists(full_path)
+
 
 def write(data: dict, mode: str) -> None:
     """
@@ -51,7 +52,8 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
 
     Args:
         choice (int): The user's choice (default is 0).
-        load_data (bool): Flag to load data from the configuration file (default is False).
+        load_data (bool): Flag to load data from the configuration file\
+        (default is False).
 
     Choices:
         1: Modify GitHub username.
@@ -89,6 +91,7 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
     else:
         click.echo('Bravo, great! You\'ve choosen invalid option')
 
+
 def create() -> None:
     """
     Create a new Pulse configuration file with user input.
@@ -107,6 +110,7 @@ def create() -> None:
 
     write(data, 'w')
 
+
 def load() -> dict:
     """
     Load data from the Pulse configuration file.
@@ -115,7 +119,8 @@ def load() -> dict:
         dict: Dictionary containing configuration data.
 
     Raises:
-        toml.TomlDecodeError: If there's an error decoding TOML data from the file.
+        toml.TomlDecodeError: If there's an error decoding TOML\
+        data from the file.
     """
     global toml_data
     full_path = os.path.join(CONFIG_PATH, 'pulseconfig.toml')

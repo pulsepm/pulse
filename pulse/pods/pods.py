@@ -5,7 +5,8 @@ from ..get.get import get_download
 from pulse.core.core_dir import COMPILER_PATH, RUNTIME_PATH
 import shutil
 compilers_dict: dict[int, str] = {}
-runtimes_dict: dict[int, str]= {}
+runtimes_dict: dict[int, str] = {}
+
 
 @click.command
 def pods() -> None:
@@ -29,7 +30,9 @@ def pods() -> None:
             return click.echo("Pulse pods was successfully deleted!")
 
         if choice == 2:
-            if not click.confirm("Are you sure? This action will delete the current runtimes/compiler files"):
+            if not click.confirm(
+                "Are you sure? This action will delete the current runtimes/compiler files"
+            ):
                 return click.echo("Canceled!")
 
             click.echo("Select what needs to be modified:")

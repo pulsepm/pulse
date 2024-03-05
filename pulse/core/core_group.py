@@ -5,10 +5,12 @@ from pulse.config.config_configure import configure
 from pulse.get.get import get
 from pulse.pods.pods import pods
 
+
 @click.group()
 def pulse():
     """Pulse - Your open.mp package manager and build tools."""
-    pass
+    ...
+
 
 pulse.add_command(init)
 pulse.add_command(configure)

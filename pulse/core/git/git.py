@@ -5,8 +5,7 @@ import platform
 import subprocess
 from zipfile import ZipFile
 import tarfile
-from pulse.config.config import load
-from git.exc import GitCommandError
+
 
 def clone_github_repo(repo_url, destination_folder, no_git=True):
     try:
@@ -15,13 +14,16 @@ def clone_github_repo(repo_url, destination_folder, no_git=True):
         if no_git is True:
             path = os.path.join(destination_folder, '.git')
             if platform.system() == "Windows":
-                subprocess.run(["cmd", "/c", "rd", "/s", "/q", path], check=True)
-            else: 
+                subprocess.run(
+                    ["cmd", "/c", "rd", "/s", "/q", path], check=True
+                )
+            else:
                 subprocess.run(["rm", "-rf", path], check=True)
 
         print(f"Repository cloned successfully to {destination_folder}")
     except git.GitCommandError as e:
         print(f"Error cloning repository: {e}")
+
 
 def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
     target_folder = target
@@ -80,6 +82,7 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
     else:
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
+
 def check_github_repo_exists(username, repo_name):
     url = f'https://api.github.com/repos/{username}/{repo_name}'
     response = requests.get(url)
@@ -91,9 +94,10 @@ def check_github_repo_exists(username, repo_name):
     else:
         print(f"Failed to check the repository. Status code: {response.status_code}")
 
+
 def create_repository(username, repository_name, access_token):
     try:
-        create_repo_url = f'https://api.github.com/user/repos'
+        create_repo_url = 'https://api.github.com/user/repos'
         headers = {'Authorization': f"token {access_token}"}
         data = {'name': repository_name, 'auto_init': False, 'private': False}
 
@@ -107,6 +111,7 @@ def create_repository(username, repository_name, access_token):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+
 def get_github_compiler_releases() -> list:
     try:
         response = requests.get("https://api.github.com/repos/pulsepm/compiler/tags")
@@ -116,6 +121,7 @@ def get_github_compiler_releases() -> list:
 
     else:
         return response.json()
+
 
 def get_github_runtime_releases() -> list:
     try:

@@ -1,6 +1,5 @@
 import toml
 import os
-import sys
 import pulse.core.git.git as git
 
 
@@ -24,9 +23,9 @@ def initialize(name: str, publisher: str, repo_name: str, entry: str = 'main.pwn
         'project': project_table
     }
 
-   # if any(os.listdir(current_dir)):
+    # if any(os.listdir(current_dir)):
     #    print('Fatal error: Working directory must be empty.')
-     #   return
+    #    return
 
     current_dir = os.getcwd()
     git.clone_github_repo('https://github.com/pulsepm/boilerplate', current_dir)
@@ -42,4 +41,3 @@ def initialize(name: str, publisher: str, repo_name: str, entry: str = 'main.pwn
         md_file.seek(0)
         md_file.truncate(0)
         md_file.write(md_data)
-        
