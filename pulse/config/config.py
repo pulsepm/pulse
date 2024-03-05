@@ -3,6 +3,7 @@ import subprocess
 import sys
 import toml
 import click
+from typing import Dict, Any
 from pulse.core.core_dir import CONFIG_PATH
 from .config_choices import prompt_choices
 toml_data = None
@@ -19,7 +20,6 @@ def exists() -> bool:
     print(CONFIG_PATH)
 
     return os.path.exists(full_path)
-
 
 def write(data: dict, mode: str) -> None:
     """
@@ -62,6 +62,9 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
         4: Exit.
 
     Recursively calls itself after each modification.
+
+    Returns:
+        None
     """
     global toml_data
     choice = prompt_choices(True)
@@ -98,6 +101,9 @@ def create() -> None:
 
     Prompts the user for GitHub username and access token.
     Writes the user input to the configuration file.
+
+    Returns:
+        None
     """
     click.echo('Configuration file doesn\'t exist. Let\'s create a new one.')
     git_name = click.prompt('Input the github username.', type=str)

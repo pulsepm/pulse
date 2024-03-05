@@ -7,7 +7,22 @@ from zipfile import ZipFile
 import tarfile
 
 
-def clone_github_repo(repo_url, destination_folder, no_git=True):
+# Implement URL type
+def clone_github_repo(repo_url, destination_folder: str, no_git=True) -> None:
+    """
+    Clones a GitHub repository to a specified destination folder and optionally removes the .git directory.
+
+    Args:
+        repo_url (str): The URL of the GitHub repository to clone.
+        destination_folder (str): The local path where the repository will be cloned.
+        no_git (bool, optional): A flag indicating whether to remove the .git directory after cloning. Default is True.
+
+    Returns:
+        None
+
+    Raises:
+        git.GitCommandError: If an error occurs during the cloning process.
+    """
     try:
         git.Repo.clone_from(repo_url, destination_folder)
 
@@ -25,9 +40,20 @@ def clone_github_repo(repo_url, destination_folder, no_git=True):
         print(f"Error cloning repository: {e}")
 
 
-def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
-    target_folder = target
+def download_and_unzip_github_release(owner: str, repo: str, tag: str, asset_name: str, target_folder: str) -> None:
+    """
+    Downloads and unzips a specific release asset from a GitHub repository.
 
+    Parameters:
+        owner (str): The owner (username or organization) of the GitHub repository.
+        repo (str): The name of the GitHub repository.
+        tag (str): The tag (version) of the release from which the asset will be downloaded.
+        asset_name (str): The name of the asset to download.
+        target_folder (str): The local path where the asset will be extracted.
+
+    Returns:
+        None
+    """
     # Get the release information
     api_url = f"https://api.github.com/repos/{owner}/{repo}/releases/tags/{tag}"
     response = requests.get(api_url)
@@ -82,8 +108,8 @@ def download_and_unzip_github_release(owner, repo, tag, asset_name, target):
     else:
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
-
-def check_github_repo_exists(username, repo_name):
+# Refactor this so it returns boolean
+def check_github_repo_exists(username: str, repo_name: str) -> None:
     url = f'https://api.github.com/repos/{username}/{repo_name}'
     response = requests.get(url)
 
@@ -95,7 +121,18 @@ def check_github_repo_exists(username, repo_name):
         print(f"Failed to check the repository. Status code: {response.status_code}")
 
 
-def create_repository(username, repository_name, access_token):
+def create_repository(username: str, repository_name: str, access_token: str) -> None:
+    """
+    Creates a new GitHub repository for a specified user.
+
+    Args:
+        username (str): The username of the owner who will own the new repository.
+        repository_name (str): The name of the new repository to be created.
+        access_token (str): The access token with the required permissions to create repositories.
+
+    Returns:
+        None
+    """
     try:
         create_repo_url = 'https://api.github.com/user/repos'
         headers = {'Authorization': f"token {access_token}"}
@@ -113,6 +150,12 @@ def create_repository(username, repository_name, access_token):
 
 
 def get_github_compiler_releases() -> list:
+    """
+    Retrieves a list of compiler releases from a GitHub repository.
+
+    Returns:
+        list: A list of compiler releases available in the GitHub repository.
+    """
     try:
         response = requests.get("https://api.github.com/repos/pulsepm/compiler/tags")
 
@@ -124,6 +167,13 @@ def get_github_compiler_releases() -> list:
 
 
 def get_github_runtime_releases() -> list:
+    """
+    Retrieves a list of compiler releases from a GitHub repository.
+
+    Returns:
+        list: A list of compiler releases available in the GitHub repository.
+    """
+
     try:
         response = requests.get("https://api.github.com/repos/openmultiplayer/open.mp/tags")
 

@@ -9,10 +9,6 @@ def init() -> None:
     """
     Initialize a new Pulse project.
 
-    Args:
-        gamemode (bool): If True, initialize a game mode package.
-        library (bool): If True, initialize a library package.
-
     Returns:
         None
 

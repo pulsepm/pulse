@@ -56,6 +56,12 @@ def pods() -> None:
 
 
 def install_compiler() -> None:
+    """
+    Prompts user to install specified compiler
+
+    Returns:
+        None
+    """
     click.echo("Select the version of the compiler you would like to install.")
     for i, release in enumerate(git.get_github_compiler_releases(), start=1):
         compilers_dict[i] = release['name']
@@ -72,6 +78,12 @@ def install_compiler() -> None:
     shutil.copytree(os.path.join(COMPILER_PATH, compilers_dict[compiler_choice]), pods_compiler)
 
 def install_runtime() -> None:
+    """
+    Prompts user to install specified runtime
+
+    Returns:
+        None
+    """
     click.echo("Select the version of the runtime you would like to install.")
     for i, release in enumerate(git.get_github_runtime_releases(), start=1):
         runtimes_dict[i] = release['name']
@@ -92,5 +104,11 @@ def install_runtime() -> None:
     shutil.copytree(os.path.join(RUNTIME_PATH, runtimes_dict[runtime_choice]), pods_runtime)
 
 def install_compiler_and_runtime() -> None:
+    """
+    Starts installation of the compilers and the runtimes
+
+    Returns:
+        None
+    """
     install_compiler()
     install_runtime()

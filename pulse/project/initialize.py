@@ -23,9 +23,9 @@ def initialize(name: str, publisher: str, repo_name: str, entry: str = 'main.pwn
         'project': project_table
     }
 
-    # if any(os.listdir(current_dir)):
-    #    print('Fatal error: Working directory must be empty.')
-    #    return
+    if any(os.listdir(current_dir)):
+        print('Fatal error: Working directory must be empty.')
+        return
 
     current_dir = os.getcwd()
     git.clone_github_repo('https://github.com/pulsepm/boilerplate', current_dir)
