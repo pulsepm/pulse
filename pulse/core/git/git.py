@@ -4,6 +4,7 @@ import os
 import platform
 import subprocess
 from zipfile import ZipFile
+from typing import Union
 import tarfile
 
 
@@ -108,17 +109,30 @@ def download_and_unzip_github_release(owner: str, repo: str, tag: str, asset_nam
     else:
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
-# Refactor this so it returns boolean
-def check_github_repo_exists(username: str, repo_name: str) -> None:
+
+def check_github_repo_exists(username: str, repo_name: str) -> Union[bool, None]:
+    """
+    Checks if a GitHub repository exists for the given username and repository name.
+
+    Args:
+        username (str): The username of the repository owner.
+        repo_name (str): The name of the repository.
+
+    Returns:
+        Union[bool, None]: Returns True if the repository exists, False if it does not exist, or None if there was an issue checking the repository.
+    """
     url = f'https://api.github.com/repos/{username}/{repo_name}'
     response = requests.get(url)
 
     if response.status_code == 200:
         print(f"The repository {username}/{repo_name} exists.")
+        return True
     elif response.status_code == 404:
         print(f"The repository {username}/{repo_name} does not exist.")
+        return False
     else:
         print(f"Failed to check the repository. Status code: {response.status_code}")
+        return None
 
 
 def create_repository(username: str, repository_name: str, access_token: str) -> None:
