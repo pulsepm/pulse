@@ -20,6 +20,7 @@ def exists() -> bool:
     print(CONFIG_PATH)
 
     return os.path.exists(full_path)
+    
 
 def write(data: dict, mode: str) -> None:
     """
