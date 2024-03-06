@@ -5,16 +5,17 @@ import platform
 import subprocess
 from zipfile import ZipFile
 from typing import Union
+from ..core_url import Url
 import tarfile
 
 
 # Implement URL type
-def clone_github_repo(repo_url, destination_folder: str, no_git=True) -> None:
+def clone_github_repo(repo_url: Url, destination_folder: str, no_git=True) -> None:
     """
     Clones a GitHub repository to a specified destination folder and optionally removes the .git directory.
 
     Args:
-        repo_url (str): The URL of the GitHub repository to clone.
+        repo_url (Url): The URL of the GitHub repository to clone.
         destination_folder (str): The local path where the repository will be cloned.
         no_git (bool, optional): A flag indicating whether to remove the .git directory after cloning. Default is True.
 
