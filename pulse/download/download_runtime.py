@@ -6,7 +6,7 @@ from pulse.core.core_dir import RUNTIME_PATH
 from .download_asset import get_asset
 runtimes_dict: dict[int, str] = {}
 
-def get_runtime() -> None:
+def get_runtime(isolate: bool = True) -> None:
     """
     Prompts user to install specified runtime
 
@@ -19,9 +19,6 @@ def get_runtime() -> None:
         click.echo(f"{i}. {release['name']}")
 
     runtime_choice = click.prompt("Enter your choice", type=click.IntRange(1, i))
-    continue_confirm = click.confirm("Do you want to continue?")
-    if not continue_confirm:
-        return click.echo("Cancelled.")
 
     runtime_path = os.path.join(RUNTIME_PATH, runtimes_dict[runtime_choice])
     if not os.path.exists(runtime_path):
@@ -29,5 +26,11 @@ def get_runtime() -> None:
         click.echo(f"Downloading runtime ({runtimes_dict[runtime_choice]})..")
         get_asset("runtime", runtimes_dict[runtime_choice])
 
-    pods_runtime = os.path.join(os.getcwd(), ".pods/runtime")
-    shutil.copytree(os.path.join(RUNTIME_PATH, runtimes_dict[runtime_choice]), pods_runtime)
+    if isolate:
+        pods_runtime = os.path.join(os.getcwd(), ".pods/runtime")
+        shutil.copytree(os.path.join(RUNTIME_PATH, runtimes_dict[runtime_choice]), pods_runtime)
+    
+    else:
+        pass # Handle adding those to pulse.toml
+
+    return runtimes_dict[runtime_choice]

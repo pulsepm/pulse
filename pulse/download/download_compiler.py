@@ -6,7 +6,7 @@ from pulse.core.core_dir import COMPILER_PATH
 from .download_asset import get_asset
 compilers_dict: dict[int, str] = {}
 
-def get_compiler() -> None:
+def get_compiler(isolate: bool = True) -> str:
     """
     Prompts user to install specified compiler
 
@@ -25,5 +25,11 @@ def get_compiler() -> None:
         click.echo(f"Downloading compiler ({compilers_dict[compiler_choice]})..")
         get_asset("compiler", compilers_dict[compiler_choice])
 
-    pods_compiler = os.path.join(os.getcwd(), ".pods/compiler")
-    shutil.copytree(os.path.join(COMPILER_PATH, compilers_dict[compiler_choice]), pods_compiler)
+    if isolate:
+        pods_compiler = os.path.join(os.getcwd(), ".pods/compiler")
+        shutil.copytree(os.path.join(COMPILER_PATH, compilers_dict[compiler_choice]), pods_compiler)
+    
+    else:
+        pass # Handle those being added to pulse.toml
+
+    return compilers_dict[compiler_choice]
