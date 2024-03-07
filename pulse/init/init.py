@@ -1,5 +1,6 @@
 import click
 import pulse.config.config as config
+import pulse.download.download as download
 from pulse.core.git.git import create_repository
 from pulse.project.initialize import initialize
 
@@ -31,9 +32,10 @@ def init() -> None:
 
     project = click.prompt('Enter the name for your project. It will be used as a project name')
     repo = click.prompt('Enter the name for your github repository.')
-    create = click.confirm('Initialize the repo?', default=True)
+    create = click.confirm('Initialize the repo?', default=False)
+    pods = click.confirm('Isolate the project - Pulse Pods? You can always do it later', default=False)
 
-    initialize(project, name, repo)
+    initialize(project, name, repo, pods)
     config.write(data, 'w')
 
     if create:
