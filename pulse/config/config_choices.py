@@ -24,13 +24,13 @@ def prompt_choices(welcome: bool = False) -> int:
         or aborts the prompt.
     """
     if welcome:
-        click.echo('Configuration exists. Let\'s modify it')
-        click.echo('Select which option you would like to modify.')
+        click.echo("Configuration exists. Let's modify it")
+        click.echo("Select which option you would like to modify.")
 
-    click.echo('1. GitHub username')
-    click.echo('2. GitHub Token')
-    click.echo('3. Exit with saving')
-    click.echo('4. Exit without saving')
+    click.echo("1. GitHub username")
+    click.echo("2. GitHub Token")
+    click.echo("3. Exit with saving")
+    click.echo("4. Exit without saving")
 
-    choice = click.prompt('Enter your choice.', type=click.IntRange(1, 4))
+    choice = click.prompt("Enter your choice.", type=click.IntRange(1, 4))
     return choice

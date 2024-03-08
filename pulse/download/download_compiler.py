@@ -4,7 +4,9 @@ import shutil
 import pulse.core.git.git as git
 from pulse.core.core_dir import COMPILER_PATH
 from .download_asset import get_asset
+
 compilers_dict: dict[int, str] = {}
+
 
 def get_compiler(isolate: bool = True) -> str:
     """
@@ -15,7 +17,7 @@ def get_compiler(isolate: bool = True) -> str:
     """
     click.echo("Select the version of the compiler you would like to install.")
     for i, release in enumerate(git.get_github_compiler_releases(), start=1):
-        compilers_dict[i] = release['name']
+        compilers_dict[i] = release["name"]
         click.echo(f"{i}. {release['name']}")
 
     compiler_choice = click.prompt("Enter your choice", type=click.IntRange(1, i))
@@ -27,9 +29,11 @@ def get_compiler(isolate: bool = True) -> str:
 
     if isolate:
         pods_compiler = os.path.join(os.getcwd(), ".pods/compiler")
-        shutil.copytree(os.path.join(COMPILER_PATH, compilers_dict[compiler_choice]), pods_compiler)
-    
+        shutil.copytree(
+            os.path.join(COMPILER_PATH, compilers_dict[compiler_choice]), pods_compiler
+        )
+
     else:
-        pass # Handle those being added to pulse.toml
+        pass  # Handle those being added to pulse.toml
 
     return compilers_dict[compiler_choice]

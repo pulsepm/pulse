@@ -11,30 +11,37 @@ def get_asset(type: str, version: str) -> None:
 
     Args:
         type (str): The type of files to download.
-        version (str): 
+        version (str):
     """
     system = platform.system()
-    if type == 'runtime':
+    if type == "runtime":
         git.download_and_unzip_github_release(
-            'openmultiplayer',
-            'open.mp',
+            "openmultiplayer",
+            "open.mp",
             version,
-            'open.mp-win-x86.zip' if system == "Windows" else 'open.mp-linux-x86.tar.gz',
-            RUNTIME_PATH
-            )
+            (
+                "open.mp-win-x86.zip"
+                if system == "Windows"
+                else "open.mp-linux-x86.tar.gz"
+            ),
+            RUNTIME_PATH,
+        )
 
         server_folder = os.path.join(RUNTIME_PATH, version)
-        os.rename(os.path.join(RUNTIME_PATH, 'Server'), server_folder)
+        os.rename(os.path.join(RUNTIME_PATH, "Server"), server_folder)
 
-    elif type == 'compiler':
+    elif type == "compiler":
         git.download_and_unzip_github_release(
-            'pulsepm',
-            'compiler',
+            "pulsepm",
+            "compiler",
             version,
-            f'pawnc-win-{version}.zip' if system == "Windows" else f'pawnc-linux-{version}.tar.gz',
-            os.path.join(COMPILER_PATH, version)
-            )
+            (
+                f"pawnc-win-{version}.zip"
+                if system == "Windows"
+                else f"pawnc-linux-{version}.tar.gz"
+            ),
+            os.path.join(COMPILER_PATH, version),
+        )
 
     else:
-        click.echo('Invalid type.')
-
+        click.echo("Invalid type.")

@@ -10,11 +10,11 @@ def pods() -> None:
     Initialize project isolation.
 
     """
-    if not os.path.exists(os.path.join(os.getcwd(), 'pulse.toml')):
-        return print('This is not a pulse package!')
+    if not os.path.exists(os.path.join(os.getcwd(), "pulse.toml")):
+        return print("This is not a pulse package!")
 
     if os.path.exists(os.path.join(os.getcwd(), ".pods")):
-        click.echo('Pulse pods have already been initialized!')
+        click.echo("Pulse pods have already been initialized!")
         click.echo("Select an action with the pulse pods:")
         click.echo("1. Delete\n2. Modify\n3. Cancel")
         choice = click.prompt("Enter your choice", type=click.IntRange(1, 3))
@@ -50,4 +50,3 @@ def pods() -> None:
     download.get_compiler()
     download.get_runtime()
     return click.echo("Pulse pods has been successfully initialized!")
-

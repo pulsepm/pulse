@@ -29,11 +29,9 @@ def clone_github_repo(repo_url: Url, destination_folder: str, no_git=True) -> No
         git.Repo.clone_from(repo_url, destination_folder)
 
         if no_git is True:
-            path = os.path.join(destination_folder, '.git')
+            path = os.path.join(destination_folder, ".git")
             if platform.system() == "Windows":
-                subprocess.run(
-                    ["cmd", "/c", "rd", "/s", "/q", path], check=True
-                )
+                subprocess.run(["cmd", "/c", "rd", "/s", "/q", path], check=True)
             else:
                 subprocess.run(["rm", "-rf", path], check=True)
 
@@ -42,7 +40,9 @@ def clone_github_repo(repo_url: Url, destination_folder: str, no_git=True) -> No
         print(f"Error cloning repository: {e}")
 
 
-def download_and_unzip_github_release(owner: str, repo: str, tag: str, asset_name: str, target_folder: str) -> None:
+def download_and_unzip_github_release(
+    owner: str, repo: str, tag: str, asset_name: str, target_folder: str
+) -> None:
     """
     Downloads and unzips a specific release asset from a GitHub repository.
 
@@ -61,7 +61,9 @@ def download_and_unzip_github_release(owner: str, repo: str, tag: str, asset_nam
     response = requests.get(api_url)
 
     if response.status_code != 200:
-        print(f"Failed to get release information. HTTP Status Code: {response.status_code}")
+        print(
+            f"Failed to get release information. HTTP Status Code: {response.status_code}"
+        )
         return
 
     release_info = response.json()
@@ -85,19 +87,19 @@ def download_and_unzip_github_release(owner: str, repo: str, tag: str, asset_nam
         return
 
     if response.status_code == 200:
-        print('Asset download successful')
+        print("Asset download successful")
         os.makedirs(target_folder, exist_ok=True)
         asset_path = os.path.join(target_folder, asset_name)
 
-        with open(asset_path, 'wb') as asset_file:
+        with open(asset_path, "wb") as asset_file:
             asset_file.write(response.content)
 
         # Unzip the downloaded asset if it is a zip file
-        if str(asset_name).endswith('.zip'):
-            with ZipFile(asset_path, 'r') as zip_ref:
+        if str(asset_name).endswith(".zip"):
+            with ZipFile(asset_path, "r") as zip_ref:
                 zip_ref.extractall(target_folder)
-        elif str(asset_name).endswith('.tar.gz'):
-            with tarfile.open(asset_path, 'r:gz') as tar_ref:
+        elif str(asset_name).endswith(".tar.gz"):
+            with tarfile.open(asset_path, "r:gz") as tar_ref:
                 tar_ref.extractall(target_folder)
         else:
             print(f"Unsupported asset type: {asset_name}")
@@ -122,7 +124,7 @@ def check_github_repo_exists(username: str, repo_name: str) -> Union[bool, None]
     Returns:
         Union[bool, None]: Returns True if the repository exists, False if it does not exist, or None if there was an issue checking the repository.
     """
-    url = f'https://api.github.com/repos/{username}/{repo_name}'
+    url = f"https://api.github.com/repos/{username}/{repo_name}"
     response = requests.get(url)
 
     if response.status_code == 200:
@@ -149,17 +151,21 @@ def create_repository(username: str, repository_name: str, access_token: str) ->
         None
     """
     try:
-        create_repo_url = 'https://api.github.com/user/repos'
-        headers = {'Authorization': f"token {access_token}"}
-        data = {'name': repository_name, 'auto_init': False, 'private': False}
+        create_repo_url = "https://api.github.com/user/repos"
+        headers = {"Authorization": f"token {access_token}"}
+        data = {"name": repository_name, "auto_init": False, "private": False}
 
         response = requests.post(create_repo_url, headers=headers, json=data)
 
         if response.status_code == 201:
             print(f"Repository '{repository_name}' created on GitHub successfully.")
-            print(f"You can visit it via: https://github.com/{username}/{repository_name}")
+            print(
+                f"You can visit it via: https://github.com/{username}/{repository_name}"
+            )
         else:
-            print(f"Failed to create repository on GitHub. Status code: {response.status_code}, Message: {response.text}")
+            print(
+                f"Failed to create repository on GitHub. Status code: {response.status_code}, Message: {response.text}"
+            )
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
@@ -190,7 +196,9 @@ def get_github_runtime_releases() -> list:
     """
 
     try:
-        response = requests.get("https://api.github.com/repos/openmultiplayer/open.mp/tags")
+        response = requests.get(
+            "https://api.github.com/repos/openmultiplayer/open.mp/tags"
+        )
 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")

@@ -19,8 +19,8 @@ def configure() -> None:
         None
     """
     click.echo(
-        '\tWelcome to Pulse configuration manager!'
-        'This is only used for github credentials e.g to publish a repository.'
+        "\tWelcome to Pulse configuration manager!"
+        "This is only used for github credentials e.g to publish a repository."
     )
     if config.exists():
         config.modify(load_data=True)
