@@ -1,6 +1,8 @@
-import click
 import os
 import shutil
+
+import click
+
 import pulse.download.download as download
 
 

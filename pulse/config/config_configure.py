@@ -1,4 +1,5 @@
 import click
+
 import pulse.config.config as config
 
 

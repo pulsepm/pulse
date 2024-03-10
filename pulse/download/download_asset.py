@@ -1,7 +1,9 @@
-import click
-import platform
 import os
-import pulse.core.git.git as git
+import platform
+
+import click
+
+import pulse.core.git.git_download as git_download
 from pulse.core.core_dir import COMPILER_PATH, RUNTIME_PATH
 
 
@@ -15,7 +17,7 @@ def get_asset(type: str, version: str) -> None:
     """
     system = platform.system()
     if type == "runtime":
-        git.download_and_unzip_github_release(
+        git_download.download_and_unzip_github_release(
             "openmultiplayer",
             "open.mp",
             version,
@@ -31,7 +33,7 @@ def get_asset(type: str, version: str) -> None:
         os.rename(os.path.join(RUNTIME_PATH, "Server"), server_folder)
 
     elif type == "compiler":
-        git.download_and_unzip_github_release(
+        git_download.download_and_unzip_github_release(
             "pulsepm",
             "compiler",
             version,

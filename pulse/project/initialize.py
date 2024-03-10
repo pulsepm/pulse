@@ -1,6 +1,8 @@
-import toml
 import os
-import pulse.core.git.git as git
+
+import toml
+
+import pulse.core.git.git_clone as git_clone
 import pulse.download.download as download
 
 
@@ -26,7 +28,7 @@ def initialize(
         print("Fatal error: Working directory must be empty.")
         return
 
-    git.clone_github_repo("https://github.com/pulsepm/boilerplate", current_dir)
+    git_clone.clone_github_repo("https://github.com/pulsepm/boilerplate", current_dir)
 
     compiler = download.get_compiler(pods)
     runtime = download.get_runtime(pods)

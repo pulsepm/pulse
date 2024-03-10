@@ -1,8 +1,11 @@
-import click
 import os
 import shutil
-import pulse.core.git.git as git
+
+import click
+
+import pulse.core.git.git_get as git_get
 from pulse.core.core_dir import COMPILER_PATH
+
 from .download_asset import get_asset
 
 compilers_dict: dict[int, str] = {}
@@ -16,7 +19,7 @@ def get_compiler(isolate: bool = True) -> str:
         None
     """
     click.echo("Select the version of the compiler you would like to install.")
-    for i, release in enumerate(git.get_github_compiler_releases(), start=1):
+    for i, release in enumerate(git_get.get_github_compiler_releases(), start=1):
         compilers_dict[i] = release["name"]
         click.echo(f"{i}. {release['name']}")
 

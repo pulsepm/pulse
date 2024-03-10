@@ -1,8 +1,11 @@
-import click
 import os
 import shutil
-import pulse.core.git.git as git
+
+import click
+
+import pulse.core.git.git_get as git_get
 from pulse.core.core_dir import RUNTIME_PATH
+
 from .download_asset import get_asset
 
 runtimes_dict: dict[int, str] = {}
@@ -16,7 +19,7 @@ def get_runtime(isolate: bool = True) -> None:
         None
     """
     click.echo("Select the version of the runtime you would like to install.")
-    for i, release in enumerate(git.get_github_runtime_releases(), start=1):
+    for i, release in enumerate(git_get.get_github_runtime_releases(), start=1):
         runtimes_dict[i] = release["name"]
         click.echo(f"{i}. {release['name']}")
 

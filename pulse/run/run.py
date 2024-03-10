@@ -1,7 +1,8 @@
-import click
 import os
-import subprocess
 import platform
+import subprocess
+
+import click
 
 # import pulse.core.git.git as git
 from pulse.core.core_dir import RUNTIME_PATH

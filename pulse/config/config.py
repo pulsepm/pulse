@@ -1,11 +1,12 @@
 import os
 import subprocess
 import sys
-import toml
+
 import click
-from typing import Dict, Any
+import toml
+
+import pulse.config.config_choices as config
 from pulse.core.core_dir import CONFIG_PATH
-from .config_choices import prompt_choices
 
 toml_data = None
 
@@ -69,7 +70,7 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
         None
     """
     global toml_data
-    choice = prompt_choices(True)
+    choice = config.prompt_choices(True)
 
     if load_data:
         toml_data = load()

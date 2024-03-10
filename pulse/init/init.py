@@ -1,6 +1,6 @@
 import click
+
 import pulse.config.config as config
-import pulse.download.download as download
 from pulse.core.git.git import create_repository
 from pulse.project.initialize import initialize
 
