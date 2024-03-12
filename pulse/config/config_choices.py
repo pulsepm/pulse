@@ -1,11 +1,13 @@
 import click
 
+
 def prompt_choices(welcome: bool = False) -> int:
     """
     Prompt the user to choose an option for modifying the Pulse configuration.
 
     Args:
-        welcome (bool): If True, display a welcome message indicating that the configuration exists.
+        welcome (bool): If True,\
+        display a welcome message indicating that the configuration exists.
             If False, only display the menu.
 
     Returns:
@@ -18,16 +20,17 @@ def prompt_choices(welcome: bool = False) -> int:
         4. Exit without saving
 
     Raises:
-        click.exceptions.Abort: If the user enters an invalid choice or aborts the prompt.
+        click.exceptions.Abort: If the user enters an invalid choice\
+        or aborts the prompt.
     """
     if welcome:
-        click.echo('Configuration exists. Let\'s modify it')
-        click.echo('Select which option you would like to modify.')
+        click.echo("Configuration exists. Let's modify it")
+        click.echo("Select which option you would like to modify.")
 
-    click.echo('1. GitHub username')
-    click.echo('2. GitHub Token')
-    click.echo('3. Exit with saving')
-    click.echo('4. Exit without saving')
+    click.echo("1. GitHub username")
+    click.echo("2. GitHub Token")
+    click.echo("3. Exit with saving")
+    click.echo("4. Exit without saving")
 
-    choice = click.prompt('Enter your choice.', type=click.IntRange(1, 4))
+    choice = click.prompt("Enter your choice.", type=click.IntRange(1, 4))
     return choice

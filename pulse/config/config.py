@@ -1,12 +1,15 @@
 import os
 import subprocess
 import sys
-import toml
+
 import click
-from pulse.core.core_dir import HOME_DIR, CONFIG_PATH
-from .config_choices import prompt_choices
+import toml
+
+import pulse.config.config_choices as config
+from pulse.core.core_dir import CONFIG_PATH
 
 toml_data = None
+
 
 def exists() -> bool:
     """
@@ -15,10 +18,11 @@ def exists() -> bool:
     Returns:
         bool: True if the configuration file exists, False otherwise.
     """
-    full_path = os.path.join(CONFIG_PATH, 'pulseconfig.toml')
+    full_path = os.path.join(CONFIG_PATH, "pulseconfig.toml")
     print(CONFIG_PATH)
 
     return os.path.exists(full_path)
+
 
 def write(data: dict, mode: str) -> None:
     """
@@ -31,7 +35,7 @@ def write(data: dict, mode: str) -> None:
     Raises:
         PermissionError: If there's a permission error during file writing.
     """
-    full_path = os.path.join(CONFIG_PATH, 'pulseconfig.toml')
+    full_path = os.path.join(CONFIG_PATH, "pulseconfig.toml")
 
     try:
         os.makedirs(CONFIG_PATH, exist_ok=True)
@@ -42,7 +46,7 @@ def write(data: dict, mode: str) -> None:
         subprocess.run(["attrib", "+H", CONFIG_PATH], check=True)
 
     except PermissionError as pe:
-        print('Permission error: ' + pe)
+        print("Permission error: " + pe)
 
 
 def modify(choice: int = 0, load_data: bool = False) -> None:
@@ -51,7 +55,8 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
 
     Args:
         choice (int): The user's choice (default is 0).
-        load_data (bool): Flag to load data from the configuration file (default is False).
+        load_data (bool): Flag to load data from the configuration file\
+        (default is False).
 
     Choices:
         1: Modify GitHub username.
@@ -60,34 +65,38 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
         4: Exit.
 
     Recursively calls itself after each modification.
+
+    Returns:
+        None
     """
     global toml_data
-    choice = prompt_choices(True)
+    choice = config.prompt_choices(True)
 
     if load_data:
         toml_data = load()
 
-    print('Choice is ' + str(choice))
+    print("Choice is " + str(choice))
 
     if choice == 1:
-        git_name = click.prompt('Input your new username')
-        toml_data['user'] = git_name
+        git_name = click.prompt("Input your new username")
+        toml_data["user"] = git_name
         modify(choice)
 
     elif choice == 2:
-        git_token = click.prompt('Input your new github access token')
-        toml_data['token'] = git_token
+        git_token = click.prompt("Input your new github access token")
+        toml_data["token"] = git_token
         modify(choice)
 
     elif choice == 3:
         print(toml_data)
-        write(toml_data, 'w')
+        write(toml_data, "w")
 
     elif choice == 4:
         sys.exit()
 
     else:
-        click.echo('Bravo, great! You\'ve choosen invalid option')
+        click.echo("Bravo, great! You've choosen invalid option")
+
 
 def create() -> None:
     """
@@ -95,17 +104,17 @@ def create() -> None:
 
     Prompts the user for GitHub username and access token.
     Writes the user input to the configuration file.
-    """
-    click.echo('Configuration file doesn\'t exist. Let\'s create a new one.')
-    git_name = click.prompt('Input the github username.', type=str)
-    git_token = click.prompt('Input the github access token.', type=str)
-    data = {
-        'last_username': git_name,
-        'user': git_name,
-        'token': git_token
-    }
 
-    write(data, 'w')
+    Returns:
+        None
+    """
+    click.echo("Configuration file doesn't exist. Let's create a new one.")
+    git_name = click.prompt("Input the github username.", type=str)
+    git_token = click.prompt("Input the github access token.", type=str)
+    data = {"last_username": git_name, "user": git_name, "token": git_token}
+
+    write(data, "w")
+
 
 def load() -> dict:
     """
@@ -115,13 +124,14 @@ def load() -> dict:
         dict: Dictionary containing configuration data.
 
     Raises:
-        toml.TomlDecodeError: If there's an error decoding TOML data from the file.
+        toml.TomlDecodeError: If there's an error decoding TOML\
+        data from the file.
     """
     global toml_data
-    full_path = os.path.join(CONFIG_PATH, 'pulseconfig.toml')
+    full_path = os.path.join(CONFIG_PATH, "pulseconfig.toml")
 
     try:
-        with open(full_path, 'r') as file:
+        with open(full_path, "r") as file:
             toml_data = toml.load(file)
             print(toml_data)
 
