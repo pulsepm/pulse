@@ -58,4 +58,3 @@ def create_repository(username: str, repository_name: str, access_token: str) ->
             )
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-
