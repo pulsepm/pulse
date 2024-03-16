@@ -1,8 +1,14 @@
 import os
 import tarfile
 from zipfile import ZipFile
+from platform import system
+from pulse.core.core_dir import REQUIREMENTS_PATH
+from io import BytesIO
 
+import re
 import requests
+import pulse.core.git.git_get as git_get
+import toml
 
 
 def download_and_unzip_github_release(
@@ -76,3 +82,80 @@ def download_and_unzip_github_release(
 
     else:
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
+
+def download_package(owner: str, repo: str, package_path: str, version: str) -> None:
+    os.makedirs(package_path)
+    try:
+        response = requests.get(
+            f"https://api.github.com/repos/{owner}/{repo}/{'zipball' if system() == 'Windows' else 'tarball'}/{version}",
+            stream=True
+        )
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    if system() == "Windows":
+        with ZipFile(BytesIO(response.content)) as z:
+            z.extractall(package_path)
+
+    if system() == "Linux":
+        with tarfile.open(BytesIO(response.content), "r:gz") as tar_ref:
+            tar_ref.extractall(package_path)
+
+    package_dir = os.path.join(package_path, version)
+    os.rename(os.path.join(package_path, os.listdir(package_path)[0]), package_dir)
+    libs = get_requirements(package_dir)
+    if libs:
+        download_requirements(libs)
+
+
+def download_requirements(requirements: list) -> None:
+    """
+    Download requirements from pulse package
+    """
+    for requirement in requirements:
+        req = re.split('/|@|==|-', requirement)
+        dependency_path = os.path.join(REQUIREMENTS_PATH, f"{req[0]}/{req[1]}")
+        if not os.path.exists(dependency_path):
+            os.makedirs(dependency_path)
+            try:
+                branch = req[2]
+            except:
+                branch = git_get.default_branch(req[0], req[1])
+            try:
+                response = requests.get(
+                    f"https://api.github.com/repos/{req[0]}/{req[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
+                    stream=True
+                )
+
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+
+            if system() == "Windows":
+                with ZipFile(BytesIO(response.content)) as z:
+                    z.extractall(dependency_path)
+
+            if system() == "Linux":
+                with tarfile.open(BytesIO(response.content), "r:gz") as tar_ref:
+                    tar_ref.extractall(dependency_path)
+
+            renamed_dir = os.path.join(dependency_path, branch)
+            print(f"Installed: {os.listdir(dependency_path)[0]}")
+            os.rename(os.path.join(dependency_path, os.listdir(dependency_path)[0]), renamed_dir)
+            libs = get_requirements(renamed_dir)
+            if libs:
+                download_requirements(libs)
+
+
+def get_requirements(dir) -> list | None:
+    with open(os.path.join(dir, "pulse.toml")) as f:
+        requirements = toml.load(f)
+
+    try:
+        requirements["project"]["dependencies"]["dependencies"]
+        print("Found requirements!\nInstalling..")
+    except:
+        return None
+
+    else:
+        return requirements["project"]["dependencies"]["dependencies"]
