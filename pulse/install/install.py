@@ -9,12 +9,7 @@ import pulse.core.git.git_get as git_get
 
 @click.command
 @click.argument("package")
-@click.option("--branch", help="Branch name", type=str)
-@click.option("--commit", help="Commit", type=str)
-@click.option("--version", help="Version", type=str)
-def install(
-    package: str, branch: str = None, commit: str = None, version: str = None
-) -> None:
+def install(package: str) -> None:
     """
     Install a pulse package.
 
@@ -25,22 +20,21 @@ def install(
     if len(re_package) > 3:
         return click.echo("Using many options are not supported!")
 
+    type = _package_type(package)
     package_path = os.path.join(PACKAGE_PATH, f"{re_package[0]}/{re_package[1]}")
     if os.path.exists(package_path):
         return click.echo(f"{re_package[0]}/{re_package[1]}'s already installed!")
-
-    git_repo = git_get.get_github_repo(
-        re_package[0], re_package[1], branch=branch, commit=commit, version=version
-    )
-    if not is_toml_package(git_repo):
-        return click.echo(
-            f"Couldn't find pulse.toml!\n{re_package[0]}/{re_package[1]}is not a Pulse package!"
-        )
 
     try:
         v_ = re_package[2]
     except:
         v_ = git_get.default_branch(re_package[0], re_package[1])
+
+    git_repo = git_get.get_github_repo(re_package[0], re_package[1], v_, type=type)
+    if not is_toml_package(git_repo):
+        return click.echo(
+            f"Couldn't find pulse.toml!\n{re_package[0]}/{re_package[1]}is not a Pulse package!"
+        )
 
     click.echo(f"Installing: {package} ({v_})..")
     git_download.download_package(
@@ -59,3 +53,17 @@ def is_toml_package(git_repo: list) -> bool:
             break
 
     return is_toml
+
+
+def _package_type(package: str) -> str | None:
+    type = None
+    if "@" in package:
+        type = "branch"
+
+    if "-" in package:
+        type = "commit"
+
+    if "==" in package:
+        type = "version"
+
+    return type

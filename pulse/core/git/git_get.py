@@ -1,5 +1,5 @@
 import requests
-from typing import Union
+from typing import Literal
 
 
 def get_github_compiler_releases() -> list:
@@ -40,16 +40,19 @@ def get_github_runtime_releases() -> list:
 
 
 def get_github_repo(
-    owner: str, repo: str, branch: str = None, commit: str = None, version: str = None
-) -> Union[dict, list]:
+    owner: str,
+    repo: str,
+    syntax: str,
+    type: Literal["branch", "commit", "version"] = None,
+) -> list:
     try:
-        if branch or commit:
-            url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{branch if branch else commit}"
+        if type == "branch" or type == "commit":
+            url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{syntax}"
 
-        if version:
-            url = f"https://api.github.com/repos/{owner}/{repo}/git/refs/tags/{version}"
+        if type == "version":
+            url = f"https://api.github.com/repos/{owner}/{repo}/git/refs/tags/{syntax}"
 
-        else:
+        if not type:
             url = f"https://api.github.com/repos/{owner}/{repo}/contents"
 
         response = requests.get(url)
@@ -58,8 +61,10 @@ def get_github_repo(
         print(f"An unexpected error occurred: {e}")
 
     else:
-        if version:
-            return get_github_repo(owner, repo, commit=response.json()["object"]["url"])
+        if type == "version":
+            return get_github_repo(
+                owner, repo, syntax == response.json()["object"]["url"], type="commit"
+            )
 
         else:
             return response.json()
