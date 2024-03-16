@@ -83,12 +83,13 @@ def download_and_unzip_github_release(
     else:
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
+
 def download_package(owner: str, repo: str, package_path: str, version: str) -> None:
     os.makedirs(package_path)
     try:
         response = requests.get(
             f"https://api.github.com/repos/{owner}/{repo}/{'zipball' if system() == 'Windows' else 'tarball'}/{version}",
-            stream=True
+            stream=True,
         )
 
     except Exception as e:
@@ -114,7 +115,7 @@ def download_requirements(requirements: list) -> None:
     Download requirements from pulse package
     """
     for requirement in requirements:
-        req = re.split('/|@|==|-', requirement)
+        req = re.split("/|@|==|-", requirement)
         dependency_path = os.path.join(REQUIREMENTS_PATH, f"{req[0]}/{req[1]}")
         if not os.path.exists(dependency_path):
             os.makedirs(dependency_path)
@@ -125,7 +126,7 @@ def download_requirements(requirements: list) -> None:
             try:
                 response = requests.get(
                     f"https://api.github.com/repos/{req[0]}/{req[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
-                    stream=True
+                    stream=True,
                 )
 
             except Exception as e:
@@ -141,7 +142,10 @@ def download_requirements(requirements: list) -> None:
 
             renamed_dir = os.path.join(dependency_path, branch)
             print(f"Installed: {os.listdir(dependency_path)[0]}")
-            os.rename(os.path.join(dependency_path, os.listdir(dependency_path)[0]), renamed_dir)
+            os.rename(
+                os.path.join(dependency_path, os.listdir(dependency_path)[0]),
+                renamed_dir,
+            )
             libs = get_requirements(renamed_dir)
             if libs:
                 download_requirements(libs)

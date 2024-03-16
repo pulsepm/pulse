@@ -1,6 +1,7 @@
 import requests
 from typing import Union
 
+
 def get_github_compiler_releases() -> list:
     """
     Retrieves a list of compiler releases from a GitHub repository.
@@ -38,7 +39,9 @@ def get_github_runtime_releases() -> list:
         return response.json()
 
 
-def get_github_repo(owner: str, repo: str, branch: str = None, commit: str = None, version: str = None) -> Union[dict, list]:
+def get_github_repo(
+    owner: str, repo: str, branch: str = None, commit: str = None, version: str = None
+) -> Union[dict, list]:
     try:
         if branch or commit:
             url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{branch if branch else commit}"
