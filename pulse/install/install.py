@@ -15,7 +15,7 @@ def install(package: str) -> None:
 
     """
     re_package = re.split(
-        "/|@|==|-", package
+        "/|@|==|:", package
     )  # ['Ykpauneu', 'pmtest' 'main / 1.0.0 / 7d3rfe']
     if len(re_package) > 3:
         return click.echo("Using many options are not supported!")
@@ -60,7 +60,7 @@ def _package_type(package: str) -> str | None:
     if "@" in package:
         type = "branch"
 
-    if "-" in package:
+    if ":" in package:
         type = "commit"
 
     if "==" in package:

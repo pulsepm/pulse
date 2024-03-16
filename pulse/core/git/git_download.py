@@ -115,7 +115,7 @@ def download_requirements(requirements: list) -> None:
     Download requirements from pulse package
     """
     for requirement in requirements:
-        req = re.split("/|@|==|-", requirement)
+        req = re.split("/|@|==|:", requirement)
         dependency_path = os.path.join(REQUIREMENTS_PATH, f"{req[0]}/{req[1]}")
         if not os.path.exists(dependency_path):
             os.makedirs(dependency_path)
@@ -156,10 +156,10 @@ def get_requirements(dir) -> list | None:
         requirements = toml.load(f)
 
     try:
-        requirements["project"]["dependencies"]["dependencies"]
+        requirements["requirements"]["live"]
         print("Found requirements!\nInstalling..")
     except:
         return None
 
     else:
-        return requirements["project"]["dependencies"]["dependencies"]
+        return requirements["requirements"]["live"]
