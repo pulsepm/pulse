@@ -20,7 +20,6 @@ def install(package: str) -> None:
     if len(re_package) > 3:
         return click.echo("Using many options are not supported!")
 
-    type = _package_type(package)
     package_path = os.path.join(PACKAGE_PATH, f"{re_package[0]}/{re_package[1]}")
     if os.path.exists(package_path):
         return click.echo(f"{re_package[0]}/{re_package[1]}'s already installed!")
@@ -30,7 +29,7 @@ def install(package: str) -> None:
     except:
         v_ = git_get.default_branch(re_package[0], re_package[1])
 
-    git_repo = git_get.get_github_repo(re_package[0], re_package[1], v_, type=type)
+    git_repo = git_get.get_github_repo(re_package[0], re_package[1], v_, type=_package_type(package))
     if not is_toml_package(git_repo):
         return click.echo(
             f"Couldn't find pulse.toml!\n{re_package[0]}/{re_package[1]}is not a Pulse package!"
