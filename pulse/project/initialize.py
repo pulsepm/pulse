@@ -7,7 +7,7 @@ import pulse.download.download as download
 
 
 def initialize(
-    name: str, publisher: str, repo_name: str, pods: bool, entry: str = "main.pwn"
+    name: str, publisher: str, repo_name: str, pods: bool, entry: str = "main.pwn", output: str = "main.amx"
 ) -> None:
     """
     Initialize a new Project instance.
@@ -19,7 +19,7 @@ def initialize(
     """
 
     current_dir = os.getcwd()
-    project_table = {"name": name, "publisher": publisher, "repo": repo_name}
+    project_table = {"name": name, "publisher": publisher, "repo": repo_name, "entry": entry, "output": output}
 
     server = None
     compiler_data = None

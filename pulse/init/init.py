@@ -35,12 +35,14 @@ def init() -> None:
         "Enter the name for your project. It will be used as a project name"
     )
     repo = click.prompt("Enter the name for your github repository.")
+    entry = click.prompt("Input the name of your entry file", default="main.pwn")
     create = click.confirm("Initialize the repo?", default=False)
     pods = click.confirm(
         "Isolate the project - Pulse Pods? You can always do it later", default=False
     )
 
-    initialize(project, name, repo, pods)
+    output = str(entry).replace(".pwn", ".amx")
+    initialize(project, name, repo, pods, entry, output)
     config.write(data, "w")
 
     if create:
