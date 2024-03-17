@@ -25,4 +25,4 @@ def build():
 
 
     # read the compiler data
-    compile(project_data['entry'], project_data['output'], compiler_data['version'], None if not 'options' in project_data else compiler_data['options'])
+    compile(project_data['entry'], project_data['output'], compiler_data['version'], None if not 'options' in compiler_data else compiler_data['options'])

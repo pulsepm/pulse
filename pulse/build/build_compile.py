@@ -21,6 +21,7 @@ def compile(entry, output, version, options: list):
         download.get_asset("compiler", version)
 
     if not options:
+        print("no options")
         options = ["-;+", "-d3", "-Z+", f"-o{output}"]
 
     else:
