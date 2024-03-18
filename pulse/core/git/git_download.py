@@ -2,13 +2,14 @@ import os
 import tarfile
 from zipfile import ZipFile
 from platform import system
-from pulse.core.core_dir import REQUIREMENTS_PATH
+from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH
 from io import BytesIO
 
 import re
 import requests
 import pulse.core.git.git_get as git_get
 import toml
+import shutil
 
 
 def download_and_unzip_github_release(
@@ -84,7 +85,9 @@ def download_and_unzip_github_release(
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
 
-def download_package(owner: str, repo: str, package_path: str, version: str) -> None:
+def download_package(
+    owner: str, repo: str, package_path: str, version: str, type: str
+) -> None:
     os.makedirs(package_path)
     try:
         response = requests.get(
@@ -105,6 +108,18 @@ def download_package(owner: str, repo: str, package_path: str, version: str) -> 
 
     package_dir = os.path.join(package_path, version)
     os.rename(os.path.join(package_path, os.listdir(package_path)[0]), package_dir)
+    # Check if package is plugin or not
+    for f_name in os.listdir(package_dir):
+        if f_name.endswith(f"{'.dll' if system() == 'Windows' else '.so'}"):
+            print(f"Found plugin: {f_name}!")
+            tmp_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}/{version}")
+            os.makedirs(tmp_dir)
+            shutil.copy2(os.path.join(package_dir, "pulse.toml"), tmp_dir)
+            shutil.copy2(os.path.join(package_dir, f_name), tmp_dir)
+            shutil.rmtree(package_path)
+            package_dir = tmp_dir
+            break
+
     libs = get_requirements(package_dir)
     if libs:
         download_requirements(libs)
@@ -146,9 +161,13 @@ def download_requirements(requirements: list) -> None:
                 os.path.join(dependency_path, os.listdir(dependency_path)[0]),
                 renamed_dir,
             )
+
             libs = get_requirements(renamed_dir)
             if libs:
                 download_requirements(libs)
+
+        else:
+            print(f"Found installed package: {req[0]}/{req[1]}..")
 
 
 def get_requirements(dir) -> list | None:

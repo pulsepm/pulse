@@ -62,9 +62,8 @@ def get_github_repo(
 
     else:
         if type == "version":
-            return get_github_repo(
-                owner, repo, syntax == response.json()["object"]["url"], type="commit"
-            )
+            tmp_ = response.json()
+            return get_github_repo(owner, repo, tmp_["object"]["sha"], type="commit")
 
         else:
             return response.json()
