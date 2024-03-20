@@ -109,19 +109,9 @@ def download_package(
     package_dir = os.path.join(package_path, version)
     os.rename(os.path.join(package_path, os.listdir(package_path)[0]), package_dir)
     # Check if package is plugin or not
-    for f_name in os.listdir(package_dir):
-        if f_name.endswith(f"{'.dll' if system() == 'Windows' else '.so'}"):
-            print(f"Found plugin: {f_name}!")
-            tmp_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}/{version}")
-            os.makedirs(tmp_dir)
-            shutil.copy2(os.path.join(package_dir, "pulse.toml"), tmp_dir)
-            shutil.copy2(os.path.join(package_dir, f_name), tmp_dir)
-            shutil.rmtree(package_path)
-            package_dir = tmp_dir
-            break
-
+    package_dir = copy_if_plugin(owner, repo, package_dir)
     libs = get_requirements(package_dir)
-    if libs:
+    if package_dir:
         download_requirements(libs)
 
 
@@ -161,13 +151,27 @@ def download_requirements(requirements: list) -> None:
                 os.path.join(dependency_path, os.listdir(dependency_path)[0]),
                 renamed_dir,
             )
-
+            renamed_dir = copy_if_plugin(req[0], req[1], renamed_dir, requirement=True)
             libs = get_requirements(renamed_dir)
             if libs:
                 download_requirements(libs)
 
         else:
             print(f"Found installed package: {req[0]}/{req[1]}..")
+
+
+def copy_if_plugin(owner: str, repo: str, directory, requirement: bool = False):
+    for f_name in os.listdir(directory):
+        f_name: str
+        if f_name.endswith(f"{'.dll' if system() == 'Windows' else '.so'}"):
+            print(f"Found plugin {'in requirements' if requirement else ''}: {f_name}!")
+            tmp_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
+            os.makedirs(tmp_dir)
+            shutil.copy2(os.path.join(directory, f_name), tmp_dir)
+            os.remove(os.path.join(directory, f_name))
+            break
+
+    return directory
 
 
 def get_requirements(dir) -> list | None:
