@@ -2,7 +2,7 @@ import os
 import tarfile
 from zipfile import ZipFile
 from platform import system
-from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH
+from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH
 from io import BytesIO
 
 import re
@@ -85,9 +85,7 @@ def download_and_unzip_github_release(
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
 
-def download_package(
-    owner: str, repo: str, package_path: str, version: str, type: str
-) -> None:
+def download_package(owner: str, repo: str, package_path: str, version: str) -> None:
     os.makedirs(package_path)
     try:
         response = requests.get(
@@ -112,22 +110,27 @@ def download_package(
     package_dir = copy_if_plugin(owner, repo, package_dir)
     libs = get_requirements(package_dir)
     if package_dir:
-        download_requirements(libs)
+        download_requirements(libs, dependency=True)
 
 
-def download_requirements(requirements: list) -> None:
+def download_requirements(requirements: list, dependency: bool = False) -> None:
     """
     Download requirements from pulse package
     """
     for requirement in requirements:
         req = re.split("/|@|==|:", requirement)
-        dependency_path = os.path.join(REQUIREMENTS_PATH, f"{req[0]}/{req[1]}")
+        try:
+            branch = req[2]
+        except:
+            branch = git_get.default_branch(req[0], req[1])
+
+        p_ = f"{req[0]}/{req[1]}/{req[2]}"
+        dependency_path = os.path.join(
+            PACKAGE_PATH if dependency else REQUIREMENTS_PATH,
+            f"{p_ if dependency else req[2]}",
+        )
         if not os.path.exists(dependency_path):
             os.makedirs(dependency_path)
-            try:
-                branch = req[2]
-            except:
-                branch = git_get.default_branch(req[0], req[1])
             try:
                 response = requests.get(
                     f"https://api.github.com/repos/{req[0]}/{req[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
