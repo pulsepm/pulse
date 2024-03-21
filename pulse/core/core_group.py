@@ -5,6 +5,8 @@ from pulse.config.config_configure import configure
 from pulse.init.init import init
 from pulse.pods.pods import pods
 from pulse.build.build import build
+from pulse.install.install import install
+
 
 @click.group()
 def pulse() -> None:
@@ -20,3 +22,4 @@ pulse.add_command(init)
 pulse.add_command(configure)
 pulse.add_command(pods)
 pulse.add_command(build)
+pulse.add_command(install)
