@@ -147,7 +147,9 @@ def download_requirements(requirements: list, dependency: bool = False) -> None:
                     tar_ref.extractall(install_path)
 
             renamed_dir = os.path.join(install_path, branch if dependency else req[1])
-            print(f"Installed {'dependency' if dependency else 'requirement'}: {os.listdir(install_path)[0]} in {install_path}")
+            print(
+                f"Installed {'dependency' if dependency else 'requirement'}: {os.listdir(install_path)[0]} in {install_path}"
+            )
             os.rename(
                 os.path.join(install_path, os.listdir(install_path)[0]),
                 renamed_dir,
@@ -179,4 +181,3 @@ def copy_if_plugin(owner: str, repo: str, directory, requirement: bool = False):
                 break
 
     return directory
-
