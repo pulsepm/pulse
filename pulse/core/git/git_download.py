@@ -108,8 +108,9 @@ def download_package(owner: str, repo: str, package_path: str, version: str) -> 
     os.rename(os.path.join(package_path, os.listdir(package_path)[0]), package_dir)
     # Check if package is plugin or not
     package_dir = copy_if_plugin(owner, repo, package_dir)
-    libs = get_requirements(package_dir)
+    libs = git_get.get_requirements(package_dir)
     if libs:
+        print("Found dependencies!\nInstalling..")
         download_requirements(libs, dependency=True)
 
 
@@ -146,15 +147,17 @@ def download_requirements(requirements: list, dependency: bool = False) -> None:
                     tar_ref.extractall(install_path)
 
             renamed_dir = os.path.join(install_path, branch if dependency else req[1])
-            print(f"Installed {'dependency' if dependency else 'requirement'}: {os.listdir(install_path)[0]}")
-            print(f"Path: {install_path}")
+            print(
+                f"Installed {'dependency' if dependency else 'requirement'}: {os.listdir(install_path)[0]} in {install_path}"
+            )
             os.rename(
                 os.path.join(install_path, os.listdir(install_path)[0]),
                 renamed_dir,
             )
             renamed_dir = copy_if_plugin(req[0], req[1], renamed_dir, requirement=True)
-            libs = get_requirements(renamed_dir)
+            libs = git_get.get_requirements(renamed_dir)
             if libs:
+                print("Found requirements!\nInstalling..")
                 download_requirements(libs)
 
         else:
@@ -178,18 +181,3 @@ def copy_if_plugin(owner: str, repo: str, directory, requirement: bool = False):
                 break
 
     return directory
-
-
-def get_requirements(dir) -> list | None:
-    with open(os.path.join(dir, "pulse.toml")) as f:
-        requirements = toml.load(f)
-
-    try:
-        requirements["requirements"]["live"]
-        print("Found requirements!\nInstalling..")
-    except:
-        print("No package requirements found..")
-        return None
-
-    else:
-        return requirements["requirements"]["live"]

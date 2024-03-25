@@ -5,6 +5,7 @@ from pulse.config.config_configure import configure
 from pulse.init.init import init
 from pulse.pods.pods import pods
 from pulse.install.install import install
+from pulse.uninstall.uninstall import uninstall
 
 
 @click.group()
@@ -21,3 +22,4 @@ pulse.add_command(init)
 pulse.add_command(configure)
 pulse.add_command(pods)
 pulse.add_command(install)
+pulse.add_command(uninstall)
