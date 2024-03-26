@@ -44,8 +44,8 @@ def install(package: str) -> None:
         package_path,
         version=re_package[2],
     )
-    _: str = "==" if "==" in package else ":" if ":" in package else "@"
-    write_requirements(re_package[0], re_package[1], _, re_package[2])
+    syntax: str = "==" if "==" in package else ":" if ":" in package else "@"
+    write_requirements(re_package[0], re_package[1], syntax, re_package[2])
     click.echo(
         f"Successfully installed the library: {re_package[0]}/{re_package[1]} ({re_package[2]})!"
     )
@@ -79,13 +79,11 @@ def write_requirements(owner: str, repo: str, sign: str, syntax: str) -> None:
         data = toml.load(file)
 
     if "requirements" not in data:
-        data_dict = {"requirements": {"live": []}}
-    else:
-        data_dict = data
+        data["requirements"] = {"live": []}
 
-    data_dict["requirements"]["live"].append(f"{owner}/{repo}{sign}{syntax}")
-    with open(os.path.join(os.getcwd(), "pulse.toml"), "a") as file:
-        toml.dump(data_dict, file)
+    data["requirements"]["live"].append(f"{owner}/{repo}{sign}{syntax}")
+    with open(os.path.join(os.getcwd(), "pulse.toml"), "w") as file:
+        toml.dump(data, file)
 
 
 def _package_type(package: str) -> str | None:
