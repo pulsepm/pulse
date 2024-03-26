@@ -18,8 +18,9 @@ def build(mode: str):
         data = toml.load(toml_file)
 
     # i just realized i might not need to check for pods folder and generally pods having the compiler folder so just go with cached compiler for now
-    print(data) # check the data
     project_data = data['project']
+    requirements = data['requirements']
+    print(requirements)
 
     if not 'compiler' in data:
         click.echo("You have to specify compiler options using [compiler] table.")
@@ -50,4 +51,4 @@ def build(mode: str):
             click.echo("You don't have compiler version specified in your pulse.toml. Please specify it via `version = (version)` key, within compiler table or your compiler profile table.")
             return
 
-        compile(project_data['entry'], project_data['output'], profile_data['version'], None if not 'options' in profile_data else profile_data['options'], None if not 'modules' in profile_data else profile_data['modules'], None if not 'legacy' in profile_data else profile_data['legacy'])
+        compile(project_data['entry'], project_data['output'], profile_data['version'], None if not 'options' in profile_data else profile_data['options'], None if not 'modules' in profile_data else profile_data['modules'], None if not 'legacy' in profile_data else profile_data['legacy'], None if not 'requirements' in data else requirements)

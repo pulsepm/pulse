@@ -3,12 +3,12 @@ import platform
 import pulse.download.download as download
 import subprocess
 import shutil
+import re
 
 from pulse.core.core_dir import COMPILER_PATH
 
-def compile(entry, output, version, options: list, modules: list, legacy: list):
-    # check if entry exists
-
+def compile(entry, output, version, options: list, modules: list, legacy: list, requirements: dict):
+    
     # let's just assume this is our scheme, correct this
     version_path_exe = os.path.join(COMPILER_PATH, version, "pawncc.exe" if platform.system() == "Windows" else "pawncc")
     version_path_lib = os.path.join(COMPILER_PATH, version, "pawnc.dll" if platform.system() == "Windows" else "pawnc.so")
@@ -34,10 +34,21 @@ def compile(entry, output, version, options: list, modules: list, legacy: list):
         for item in legacy:
             options.append(f"-i{item}")
 
-    print("To here 3")
     if modules:
         for item in modules:
             options.append(f"-i{item}")
+
+    # requirements scan and add dependencies
+
+    if requirements:
+        # list through toml requirements
+        for key, item in requirements.items():
+            requirement = re.split(r'/|@|==|:', str(item))[1].split('/')[0]
+
+            # append them
+            if not requirement in options:
+                options.append('-irequirements/'+f'{requirement}')
+
 
     print(f"Here goes options: {options}")
     # now everything is fine, let's fire building with the options
