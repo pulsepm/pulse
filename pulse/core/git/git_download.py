@@ -127,41 +127,45 @@ def download_requirements(requirements: list, dependency: bool = False) -> None:
 
         dependency_package = os.path.join(PACKAGE_PATH, f"{req[0]}/{req[1]}")
         install_path = dependency_package if dependency else REQUIREMENTS_PATH
-        if not os.path.exists(install_path):
-            os.makedirs(install_path)
-            try:
-                response = requests.get(
-                    f"https://api.github.com/repos/{req[0]}/{req[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
-                    stream=True,
-                )
-
-            except Exception as e:
-                print(f"An unexpected error occurred: {e}")
-
-            if system() == "Windows":
-                with ZipFile(BytesIO(response.content)) as z:
-                    z.extractall(install_path)
-
-            if system() == "Linux":
-                with tarfile.open(BytesIO(response.content), "r:gz") as tar_ref:
-                    tar_ref.extractall(install_path)
-
-            renamed_dir = os.path.join(install_path, branch if dependency else req[1])
-            print(
-                f"Installed {'dependency' if dependency else 'requirement'}: {os.listdir(install_path)[0]} in {install_path}"
+        try:
+            response = requests.get(
+                f"https://api.github.com/repos/{req[0]}/{req[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
+                stream=True,
             )
-            os.rename(
-                os.path.join(install_path, os.listdir(install_path)[0]),
-                renamed_dir,
-            )
-            renamed_dir = copy_if_plugin(req[0], req[1], renamed_dir, requirement=True)
-            libs = git_get.get_requirements(renamed_dir)
-            if libs:
-                print("Found requirements!\nInstalling..")
-                download_requirements(libs)
 
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+        if dependency:
+            renamed_dir = os.path.join(install_path, branch)
         else:
+            renamed_dir = os.path.join(install_path, req[1])
+
+        if os.path.exists(renamed_dir):
             print(f"Found installed package: {req[0]}/{req[1]}..")
+            continue
+
+        os.makedirs(install_path, exist_ok=True)
+        if system() == "Windows":
+            with ZipFile(BytesIO(response.content)) as z:
+                z.extractall(install_path)
+
+        if system() == "Linux":
+            with tarfile.open(BytesIO(response.content), "r:gz") as tar_ref:
+                tar_ref.extractall(install_path)
+
+        print(
+            f"Installed {'dependency' if dependency else 'requirement'}: {os.listdir(install_path)[0]} in {install_path}"
+        )
+        os.rename(
+            os.path.join(install_path, os.listdir(install_path)[0]),
+            renamed_dir,
+        )
+        renamed_dir = copy_if_plugin(req[0], req[1], renamed_dir, requirement=True)
+        libs = git_get.get_requirements(renamed_dir)
+        if libs:
+            print("Found requirements!\nInstalling..")
+            download_requirements(libs)
 
 
 def copy_if_plugin(owner: str, repo: str, directory, requirement: bool = False):

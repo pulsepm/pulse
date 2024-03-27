@@ -50,21 +50,18 @@ def ensure() -> None:
         tmp_dir = os.path.join(REQUIREMENTS_PATH, f"{re_package[1]}")
         if not os.path.exists(tmp_dir):
             os.makedirs(tmp_dir)
-            is_plugin: bool = False
+            for file in os.listdir(package_path):
+                shutil.copy2(os.path.join(package_path, file), tmp_dir)
+
             plugins_path = os.path.join(
                 PLUGINS_PATH, f"{re_package[0]}/{re_package[1]}"
             )
             for file in os.listdir(plugins_path):
-                if file.endswith(
-                    f"{'.dll' if platform.system() == 'Windows' else '.so'}"
-                ):
+                if file.endswith((".dll", ".so")):
                     click.echo(f"Found plugin: {file}!")
-                    shutil.copy2(os.path.join(plugins_path, file), tmp_dir)
-                    is_plugin = True
-                    break
-
-                if not is_plugin:
-                    shutil.copy2(os.path.join(package_path, file), tmp_dir)
+                    tmp_plugins_path = os.path.join(REQUIREMENTS_PATH, "plugins")
+                    os.makedirs(tmp_plugins_path)
+                    shutil.copy2(os.path.join(plugins_path, file), tmp_plugins_path)
 
         else:
             click.echo("The requirement already exists..")
