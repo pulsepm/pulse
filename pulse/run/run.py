@@ -57,23 +57,25 @@ def run(ensure: bool) -> None:
     # now loop through plugins
 
     runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
+    runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
 
     for file in os.listdir(os.path.join(REQUIREMENTS_PATH, "plugins")):
         full_file = os.path.join(REQUIREMENTS_PATH, "plugins", file)
         print(full_file)
         if os.path.isfile(full_file):
-            print("Nije fajl a jeste")
             os.makedirs(runtime_plugins, exist_ok=True)
 
             shutil.copy(full_file, runtime_plugins)
             # add them to config.json
             json_data['pawn']['legacy_plugins'].append(file)
-            print(f"Plugins: {json_data['pawn']['legacy_plugins']}")
+
+    #move the mode
+    shutil.copy(os.path.join(os.getcwd(), data['project']['output']), os.path.join(runtime_loc, "gamemodes"))
             
-    with open(os.path.join(RUNTIME_PATH, data['runtime']['version'], "config.json"), 'w') as json_file:
+    with open(os.path.join(runtime_loc, "config.json"), 'w') as json_file:
+        json_data['pawn']['main_scripts'].clear()
+        json_data['pawn']['main_scripts'].append(os.path.basename(data['project']['output'][:-4]))
         json.dump(json_data, json_file, indent=4)
 
-    old_dir = os.getcwd()
-    os.chdir(os.path.join(RUNTIME_PATH, data['runtime']['version']))
+    os.chdir(runtime_loc)
     server(file_name)
-    #os.chdir(old_dir)

@@ -14,7 +14,7 @@ def pods() -> None:
     Initialize project isolation.
 
     """
-    if not os.path.exists(PODS_PATH):
+    if not os.path.exists(os.path.join(os.getcwd(), 'pulse.toml')):
         return print("This is not a pulse package!")
 
     if os.path.exists(PODS_PATH):
