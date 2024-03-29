@@ -5,6 +5,8 @@ import click
 
 import pulse.download.download as download
 
+from pulse.core.core_dir import PODS_PATH
+
 
 @click.command
 def pods() -> None:
@@ -12,10 +14,10 @@ def pods() -> None:
     Initialize project isolation.
 
     """
-    if not os.path.exists(os.path.join(os.getcwd(), "pulse.toml")):
+    if not os.path.exists(PODS_PATH):
         return print("This is not a pulse package!")
 
-    if os.path.exists(os.path.join(os.getcwd(), ".pods")):
+    if os.path.exists(PODS_PATH):
         click.echo("Pulse pods have already been initialized!")
         click.echo("Select an action with the pulse pods:")
         click.echo("1. Delete\n2. Modify\n3. Cancel")
@@ -24,7 +26,7 @@ def pods() -> None:
             if not click.confirm("Are you sure?"):
                 return click.echo("Canceled!")
 
-            shutil.rmtree(os.path.join(os.getcwd(), ".pods"))
+            shutil.rmtree(PODS_PATH)
             return click.echo("Pulse pods was successfully deleted!")
 
         if choice == 2:
@@ -37,11 +39,11 @@ def pods() -> None:
             click.echo("1. Compiler\n2. Runtime")
             choice_mod = click.prompt("Enter your choice", type=click.IntRange(1, 2))
             if choice_mod == 1:
-                shutil.rmtree(os.path.join(os.getcwd(), ".pods/compiler"))
+                shutil.rmtree(os.path.join(PODS_PATH, "compiler"))
                 download.get_compiler()
 
             if choice_mod == 2:
-                shutil.rmtree(os.path.join(os.getcwd(), ".pods/runtime"))
+                shutil.rmtree(os.path.join(PODS_PATH, "runtime"))
                 download.get_runtime()
 
             return click.echo("Pulse pods has been successfully modified!")
