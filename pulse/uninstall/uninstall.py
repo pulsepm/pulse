@@ -80,6 +80,7 @@ def remove_plugins(directory: str) -> str:
         for f_name in os.listdir(directory):
             if f_name.endswith(("dll", "so")):
                 os.remove(os.path.join(directory, f_name))
+                os.remove(os.path.join(REQUIREMENTS_PATH, f"plugins/{f_name}"))
                 click.echo(f"Removed plugin: {f_name}.")
 
         shutil.rmtree(directory)
@@ -92,8 +93,4 @@ def remove_plugins(directory: str) -> str:
 def remove_if_plugin(owner: str, repo: str) -> None:
     plugins_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
     if not remove_plugins(plugins_dir):
-        click.echo(f"Plugins not found ({plugins_dir}).")
-
-    # requirements_plugin_dir = os.path.join(REQUIREMENTS_PATH, "plugins")
-    # if not remove_plugins(requirements_plugin_dir):
-    #     click.echo(f"Plugins not found in ({requirements_plugin_dir}).")
+        return click.echo(f"Plugins not found ({plugins_dir}).")
