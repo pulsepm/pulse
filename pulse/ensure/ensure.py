@@ -47,25 +47,47 @@ def ensure() -> None:
                 re_package[0], re_package[1], package_path, re_package[2]
             )
 
-        tmp_dir = os.path.join(REQUIREMENTS_PATH, f"{re_package[1]}")
-        if not os.path.exists(tmp_dir):
-            os.makedirs(tmp_dir)
-            for file in os.listdir(package_path):
-                shutil.copy2(os.path.join(package_path, file), tmp_dir)
+        ensure_path = os.path.join(REQUIREMENTS_PATH, re_package[1])
+        shutil.copytree(package_path, ensure_path, dirs_exist_ok=True)
+        plugins_path = os.path.join(PLUGINS_PATH, f"{re_package[0]}/{re_package[1]}")
+        if os.path.exists(plugins_path):
+            ensure_plugin(plugins_path)
 
-            plugins_path = os.path.join(
-                PLUGINS_PATH, f"{re_package[0]}/{re_package[1]}"
-            )
-            for file in os.listdir(plugins_path):
-                if file.endswith((".dll", ".so")):
-                    click.echo(f"Found plugin: {file}!")
-                    tmp_plugins_path = os.path.join(REQUIREMENTS_PATH, "plugins")
-                    os.makedirs(tmp_plugins_path)
-                    shutil.copy2(os.path.join(plugins_path, file), tmp_plugins_path)
-
-        else:
-            click.echo("The requirement already exists..")
+        dependencies = git_get.get_requirements(package_path)
+        if dependencies:
+            ensure_dependencies(dependencies)
 
         print(
             f"Package {re_package[0]}/{re_package[1]} ({re_package[2]}) has been successfully migrated!"
         )
+
+
+def ensure_dependencies(dependencies) -> None:
+    for dependency in dependencies:
+        dependency = re.split("/|@|==|:", dependency)
+
+    default_path = os.path.join(
+        PACKAGE_PATH, f"{dependency[0]}/{dependency[1]}/{dependency[2]}"
+    )
+    dep_plugins = os.path.join(PLUGINS_PATH, f"{dependency[0]}/{dependency[1]}")
+    if os.path.exists(dep_plugins):
+        ensure_plugin(dep_plugins)
+
+    shutil.copytree(
+        default_path, os.path.join(REQUIREMENTS_PATH, dependency[1]), dirs_exist_ok=True
+    )
+    click.echo(f"Migrated {dependency[0]}/{dependency[1]} ({dependency[2]})..")
+    libs = git_get.get_requirements(default_path)
+    if libs:
+        ensure_dependencies(libs)
+
+
+def ensure_plugin(directory) -> None:
+    ensure_plugin_path = os.path.join(REQUIREMENTS_PATH, "plugins")
+    if not os.path.exists(ensure_plugin_path):
+        os.makedirs(ensure_plugin_path)
+
+    for f_name in os.listdir(directory):
+        if f_name.endswith(("dll", "so")):
+            print(f"Found plugin: {f_name} in {directory}!")
+            shutil.copy2(os.path.join(directory, f_name), ensure_plugin_path)

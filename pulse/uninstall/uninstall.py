@@ -34,37 +34,7 @@ def uninstall(package: str, recursive: bool) -> None:
 
     if recursive:
         dependencies = git_get.get_requirements(package_path)
-        if dependencies:
-            for dependency in dependencies:
-                re_dependency = re.split("/|@|==|:", dependency)
-                dep_path = os.path.join(
-                    PACKAGE_PATH,
-                    f"{re_dependency[0]}/{re_dependency[1]}/{re_dependency[2]}",
-                )
-                click.echo(f"Found dependency: {dependency}.")
-                try:
-                    re_dependency[2]
-                except:
-                    re_dependency.append(
-                        git_get.default_branch(re_dependency[0], re_dependency[1])
-                    )
-
-                remove_if_plugin(re_dependency[0], re_dependency[1])
-                requirements = git_get.get_requirements(dep_path)
-                if requirements:
-                    click.echo(f"Found requirements in {dependency}.")
-                    for requirement in requirements:
-                        re_requirement = re.split("/|@|==|:", requirement)
-                        shutil.rmtree(
-                            os.path.join(REQUIREMENTS_PATH, f"{re_requirement[1]}")
-                        )
-                        print(f"Deleted requirement: {re_requirement[1]}")
-
-                shutil.rmtree(dep_path)
-                os.rmdir(
-                    os.path.join(PACKAGE_PATH, f"{re_dependency[0]}/{re_dependency[1]}")
-                )
-                print(f"Deleted dependency: {dependency}")
+        remove_dependencies(dependencies)
 
     with open(os.path.join(os.getcwd(), "pulse.toml"), "r") as file:
         data = toml.load(file)
@@ -76,23 +46,59 @@ def uninstall(package: str, recursive: bool) -> None:
     with open(os.path.join(os.getcwd(), "pulse.toml"), "w") as file:
         toml.dump(data, file)
 
+    remove_if_plugin(re_package[0], re_package[1])
     shutil.rmtree(package_path)
     os.rmdir(os.path.join(PACKAGE_PATH, f"{re_package[0]}/{re_package[1]}"))
-    remove_if_plugin(re_package[0], re_package[1])
+    shutil.rmtree(os.path.join(REQUIREMENTS_PATH, re_package[1]), ignore_errors=True)
     click.echo(f"Package {package} has been deleted.")
 
 
-def remove_if_plugin(owner: str, repo: str) -> None:
-    print("Looking for plugins..")
-    try:
-        plugins_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
-        for f_name in os.listdir(plugins_dir):
-            if f_name.endswith(
-                f"{'.dll' if platform.system() == 'Windows' else '.so'}"
-            ):
-                print(f"Found plugin: {f_name}!")
-                shutil.rmtree(plugins_dir)
-                print(f"Removed plugin: {f_name}.")
+def remove_dependencies(dependencies) -> None:
+    for dependence in dependencies:
+        dependence = re.split("/|@|==|:", dependence)
+        try:
+            dependence[2]
+        except:
+            dependence.append(git_get.default_branch(dependence[0], dependence[1]))
 
-    except:
-        return click.echo("Plugins not found.")
+        dependence_ppc_path = os.path.join(
+            PACKAGE_PATH, f"{dependence[0]}/{dependence[1]}/{dependence[2]}"
+        )
+        if not os.path.exists(dependence_ppc_path):
+            click.echo(
+                f"Package {dependence[0]}/{dependence[1]} ({dependence[2]}) was not found in {dependence_ppc_path}.."
+            )
+            continue
+
+        remove_if_plugin(dependence[0], dependence[1])
+        click.echo(
+            f"Found dependence {dependence[0]}/{dependence[1]} ({dependence[2]}) in {dependence_ppc_path}!"
+        )
+        libs = git_get.get_requirements(dependence_ppc_path)
+        if libs:
+            remove_dependencies(libs)
+
+        shutil.rmtree(dependence_ppc_path)
+        shutil.rmtree(os.path.join(REQUIREMENTS_PATH, dependence[1]))
+        os.rmdir(os.path.join(PACKAGE_PATH, f"{dependence[0]}/{dependence[1]}"))
+
+
+def remove_plugins(directory: str) -> str:
+    if os.path.exists(directory):
+        for f_name in os.listdir(directory):
+            if f_name.endswith(("dll", "so")):
+                os.remove(os.path.join(directory, f_name))
+                os.remove(os.path.join(REQUIREMENTS_PATH, f"plugins/{f_name}"))
+                click.echo(f"Removed plugin: {f_name}.")
+
+        shutil.rmtree(directory)
+        return True
+
+    else:
+        return False
+
+
+def remove_if_plugin(owner: str, repo: str) -> None:
+    plugins_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
+    if not remove_plugins(plugins_dir):
+        return click.echo(f"Plugins not found ({plugins_dir}).")

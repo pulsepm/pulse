@@ -106,43 +106,41 @@ def download_package(owner: str, repo: str, package_path: str, version: str) -> 
 
     package_dir = os.path.join(package_path, version)
     os.rename(os.path.join(package_path, os.listdir(package_path)[0]), package_dir)
-    # Check if package is plugin or not
     package_dir = copy_if_plugin(owner, repo, package_dir)
     libs = git_get.get_requirements(package_dir)
     if libs:
-        print("Found dependencies!\nInstalling..")
-        download_requirements(libs, dependency=True)
+        print(f"Found dependencies for {owner}/{repo}!\nInstalling..")
+        download_requirements(libs)
+
+    requirements = os.path.join(REQUIREMENTS_PATH, repo)
+    shutil.copytree(package_dir, requirements)
 
 
-def download_requirements(requirements: list, dependency: bool = False) -> None:
+def download_requirements(requirements: list) -> None:
     """
     Download requirements from pulse package
     """
     for requirement in requirements:
-        req = re.split("/|@|==|:", requirement)
+        re_requirement = re.split("/|@|==|:", requirement)
         try:
-            branch = req[2]
+            branch = re_requirement[2]
         except:
-            branch = git_get.default_branch(req[0], req[1])
+            branch = git_get.default_branch(re_requirement[0], re_requirement[1])
 
-        dependency_package = os.path.join(PACKAGE_PATH, f"{req[0]}/{req[1]}")
-        install_path = dependency_package if dependency else REQUIREMENTS_PATH
+        install_path = os.path.join(
+            PACKAGE_PATH, f"{re_requirement[0]}/{re_requirement[1]}"
+        )
         try:
             response = requests.get(
-                f"https://api.github.com/repos/{req[0]}/{req[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
+                f"https://api.github.com/repos/{re_requirement[0]}/{re_requirement[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
                 stream=True,
             )
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
-        if dependency:
-            renamed_dir = os.path.join(install_path, branch)
-        else:
-            renamed_dir = os.path.join(install_path, req[1])
-
-        if os.path.exists(renamed_dir):
-            print(f"Found installed package: {req[0]}/{req[1]}..")
+        if os.path.exists(install_path):
+            print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
             continue
 
         os.makedirs(install_path, exist_ok=True)
@@ -154,34 +152,37 @@ def download_requirements(requirements: list, dependency: bool = False) -> None:
             with tarfile.open(BytesIO(response.content), "r:gz") as tar_ref:
                 tar_ref.extractall(install_path)
 
-        print(
-            f"Installed {'dependency' if dependency else 'requirement'}: {os.listdir(install_path)[0]} in {install_path}"
-        )
+        print(f"Installed dependency: {os.listdir(install_path)[0]} in {install_path}")
+        install_path_with_ver = os.path.join(install_path, re_requirement[2])
         os.rename(
             os.path.join(install_path, os.listdir(install_path)[0]),
-            renamed_dir,
+            install_path_with_ver,
         )
-        renamed_dir = copy_if_plugin(req[0], req[1], renamed_dir, requirement=True)
-        libs = git_get.get_requirements(renamed_dir)
+        install_path_with_ver = copy_if_plugin(
+            re_requirement[0], re_requirement[1], install_path_with_ver
+        )
+        libs = git_get.get_requirements(install_path_with_ver)
+        shutil.copytree(
+            install_path_with_ver, os.path.join(REQUIREMENTS_PATH, re_requirement[1])
+        )
         if libs:
-            print("Found requirements!\nInstalling..")
+            print(
+                f"Found dependencies for {re_requirement[0]}/{re_requirement[1]}!\nInstalling.."
+            )
             download_requirements(libs)
 
 
-def copy_if_plugin(owner: str, repo: str, directory, requirement: bool = False):
+def copy_if_plugin(owner: str, repo: str, directory):
     for f_name in os.listdir(directory):
-        f_name: str
-        if f_name.endswith(f"{'.dll' if system() == 'Windows' else '.so'}"):
-            print(f"Found plugin {'in requirements' if requirement else ''}: {f_name}!")
+        if f_name.endswith(("dll", "so")):
+            print(f"Found plugin: {f_name} in {directory}!")
             tmp_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
-            if os.path.exists(tmp_dir):
-                print("The plugin has already been installed..")
-                break
-
-            else:
-                os.makedirs(tmp_dir)
-                shutil.copy2(os.path.join(directory, f_name), tmp_dir)
-                os.remove(os.path.join(directory, f_name))
-                break
+            tmp_reqirements = os.path.join(REQUIREMENTS_PATH, "plugins")
+            os.makedirs(tmp_reqirements, exist_ok=True)
+            os.makedirs(tmp_dir, exist_ok=True)
+            shutil.copy2(os.path.join(directory, f_name), tmp_dir)
+            shutil.copy2(os.path.join(directory, f_name), tmp_reqirements)
+            os.remove(os.path.join(directory, f_name))
+            continue
 
     return directory
