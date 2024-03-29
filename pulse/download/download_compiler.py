@@ -4,7 +4,7 @@ import shutil
 import click
 
 import pulse.core.git.git_get as git_get
-from pulse.core.core_dir import COMPILER_PATH
+from pulse.core.core_dir import COMPILER_PATH, PODS_PATH
 
 from .download_asset import get_asset
 
@@ -31,7 +31,7 @@ def get_compiler(isolate: bool = True) -> str:
         get_asset("compiler", compilers_dict[compiler_choice])
 
     if isolate:
-        pods_compiler = os.path.join(os.getcwd(), ".pods/compiler")
+        pods_compiler = os.path.join(os.getcwd(), PODS_PATH, "compiler")
         shutil.copytree(
             os.path.join(COMPILER_PATH, compilers_dict[compiler_choice]), pods_compiler
         )

@@ -4,7 +4,7 @@ import shutil
 import click
 
 import pulse.core.git.git_get as git_get
-from pulse.core.core_dir import RUNTIME_PATH
+from pulse.core.core_dir import RUNTIME_PATH, PODS_PATH
 
 from .download_asset import get_asset
 
@@ -32,7 +32,7 @@ def get_runtime(isolate: bool = True) -> None:
         get_asset("runtime", runtimes_dict[runtime_choice])
 
     if isolate:
-        pods_runtime = os.path.join(os.getcwd(), ".pods/runtime")
+        pods_runtime = os.path.join(os.getcwd(), PODS_PATH, "runtime")
         shutil.copytree(
             os.path.join(RUNTIME_PATH, runtimes_dict[runtime_choice]), pods_runtime
         )
