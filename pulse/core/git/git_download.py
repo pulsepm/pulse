@@ -169,20 +169,15 @@ def download_requirements(requirements: list) -> None:
 
 def copy_if_plugin(owner: str, repo: str, directory):
     for f_name in os.listdir(directory):
-        if f_name.endswith(f"{'.dll' if system() == 'Windows' else '.so'}"):
+        if f_name.endswith(("dll", "so")):
             print(f"Found plugin: {f_name} in {directory}!")
             tmp_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
             tmp_reqirements = os.path.join(REQUIREMENTS_PATH, "plugins")
             os.makedirs(tmp_reqirements, exist_ok=True)
-            if os.path.exists(tmp_dir):
-                print("The plugin has already been installed..")
-                break
-
-            else:
-                os.makedirs(tmp_dir)
-                shutil.copy2(os.path.join(directory, f_name), tmp_dir)
-                shutil.copy2(os.path.join(directory, f_name), tmp_reqirements)
-                os.remove(os.path.join(directory, f_name))
-                break
+            os.makedirs(tmp_dir, exist_ok=True)
+            shutil.copy2(os.path.join(directory, f_name), tmp_dir)
+            shutil.copy2(os.path.join(directory, f_name), tmp_reqirements)
+            os.remove(os.path.join(directory, f_name))
+            continue
 
     return directory
