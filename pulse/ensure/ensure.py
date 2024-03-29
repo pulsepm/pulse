@@ -61,16 +61,21 @@ def ensure() -> None:
             f"Package {re_package[0]}/{re_package[1]} ({re_package[2]}) has been successfully migrated!"
         )
 
+
 def ensure_dependencies(dependencies) -> None:
     for dependency in dependencies:
         dependency = re.split("/|@|==|:", dependency)
 
-    default_path = os.path.join(PACKAGE_PATH, f"{dependency[0]}/{dependency[1]}/{dependency[2]}")
+    default_path = os.path.join(
+        PACKAGE_PATH, f"{dependency[0]}/{dependency[1]}/{dependency[2]}"
+    )
     dep_plugins = os.path.join(PLUGINS_PATH, f"{dependency[0]}/{dependency[1]}")
     if os.path.exists(dep_plugins):
         ensure_plugin(dep_plugins)
 
-    shutil.copytree(default_path, os.path.join(REQUIREMENTS_PATH, dependency[1]), dirs_exist_ok=True)
+    shutil.copytree(
+        default_path, os.path.join(REQUIREMENTS_PATH, dependency[1]), dirs_exist_ok=True
+    )
     click.echo(f"Migrated {dependency[0]}/{dependency[1]} ({dependency[2]})..")
     libs = git_get.get_requirements(default_path)
     if libs:

@@ -56,16 +56,24 @@ def uninstall(package: str, recursive: bool) -> None:
 def remove_dependencies(dependencies) -> None:
     for dependence in dependencies:
         dependence = re.split("/|@|==|:", dependence)
-        try: dependence[2]
-        except: dependence.append(git_get.default_branch(dependence[0], dependence[1]))
+        try:
+            dependence[2]
+        except:
+            dependence.append(git_get.default_branch(dependence[0], dependence[1]))
 
-        dependence_ppc_path = os.path.join(PACKAGE_PATH, f"{dependence[0]}/{dependence[1]}/{dependence[2]}")
+        dependence_ppc_path = os.path.join(
+            PACKAGE_PATH, f"{dependence[0]}/{dependence[1]}/{dependence[2]}"
+        )
         if not os.path.exists(dependence_ppc_path):
-            click.echo(f"Package {dependence[0]}/{dependence[1]} ({dependence[2]}) was not found in {dependence_ppc_path}..")
+            click.echo(
+                f"Package {dependence[0]}/{dependence[1]} ({dependence[2]}) was not found in {dependence_ppc_path}.."
+            )
             continue
 
         remove_if_plugin(dependence[0], dependence[1])
-        click.echo(f"Found dependence {dependence[0]}/{dependence[1]} ({dependence[2]}) in {dependence_ppc_path}!")
+        click.echo(
+            f"Found dependence {dependence[0]}/{dependence[1]} ({dependence[2]}) in {dependence_ppc_path}!"
+        )
         libs = git_get.get_requirements(dependence_ppc_path)
         if libs:
             remove_dependencies(libs)

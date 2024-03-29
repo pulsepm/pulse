@@ -127,7 +127,9 @@ def download_requirements(requirements: list) -> None:
         except:
             branch = git_get.default_branch(re_requirement[0], re_requirement[1])
 
-        install_path = os.path.join(PACKAGE_PATH, f"{re_requirement[0]}/{re_requirement[1]}")
+        install_path = os.path.join(
+            PACKAGE_PATH, f"{re_requirement[0]}/{re_requirement[1]}"
+        )
         try:
             response = requests.get(
                 f"https://api.github.com/repos/{re_requirement[0]}/{re_requirement[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
@@ -150,19 +152,23 @@ def download_requirements(requirements: list) -> None:
             with tarfile.open(BytesIO(response.content), "r:gz") as tar_ref:
                 tar_ref.extractall(install_path)
 
-        print(
-            f"Installed dependency: {os.listdir(install_path)[0]} in {install_path}"
-        )
+        print(f"Installed dependency: {os.listdir(install_path)[0]} in {install_path}")
         install_path_with_ver = os.path.join(install_path, re_requirement[2])
         os.rename(
             os.path.join(install_path, os.listdir(install_path)[0]),
             install_path_with_ver,
         )
-        install_path_with_ver = copy_if_plugin(re_requirement[0], re_requirement[1], install_path_with_ver)
+        install_path_with_ver = copy_if_plugin(
+            re_requirement[0], re_requirement[1], install_path_with_ver
+        )
         libs = git_get.get_requirements(install_path_with_ver)
-        shutil.copytree(install_path_with_ver, os.path.join(REQUIREMENTS_PATH, re_requirement[1]))
+        shutil.copytree(
+            install_path_with_ver, os.path.join(REQUIREMENTS_PATH, re_requirement[1])
+        )
         if libs:
-            print(f"Found dependencies for {re_requirement[0]}/{re_requirement[1]}!\nInstalling..")
+            print(
+                f"Found dependencies for {re_requirement[0]}/{re_requirement[1]}!\nInstalling.."
+            )
             download_requirements(libs)
 
 
