@@ -161,7 +161,6 @@ def download_requirements(requirements: list) -> None:
         install_path_with_ver = copy_if_plugin(re_requirement[0], re_requirement[1], install_path_with_ver)
         libs = git_get.get_requirements(install_path_with_ver)
         shutil.copytree(install_path_with_ver, os.path.join(REQUIREMENTS_PATH, re_requirement[1]))
-        print
         if libs:
             print(f"Found dependencies for {re_requirement[0]}/{re_requirement[1]}!\nInstalling..")
             download_requirements(libs)
