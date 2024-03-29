@@ -15,6 +15,10 @@ def ensure() -> None:
     """
     Ensures all packages are present.
     """
+    return ensure_packages()
+
+
+def ensure_packages() -> None:
     current_path = os.getcwd()
     if not os.path.exists(os.path.join(current_path, "pulse.toml")):
         return click.echo("The pulse.toml file was not found..")
