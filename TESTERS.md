@@ -80,7 +80,7 @@ It also adds legacy list and modules list as include paths as well as `project_f
     `pulse run`
 
 ##### Summary
-    Runs the server
+Runs the server
 
 ##### Behavior
 Upon executing the command, it executes omp-server. If .pods folder is present it ignores the version within pulse.toml and executes the one within .pods folder, otherwise it uses version in pulse.toml as a representation for the server. If version specified is not present (installed) it will install them automatically. Note that upon executing, it adds plugins from `project_folder/requirements/plugins` into `plugins` folder of the server also it moves the output file so the server has to execute something.
