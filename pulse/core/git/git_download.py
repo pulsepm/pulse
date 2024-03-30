@@ -176,6 +176,11 @@ def copy_if_plugin(owner: str, repo: str, directory):
     for f_name in os.listdir(directory):
         if f_name.endswith(("dll", "so")):
             print(f"Found plugin: {f_name} in {directory}!")
+            if system() == "Windows" and f_name.endswith("so") or system() == "Linux" and f_name.endswith("dll"):
+                os.remove(os.path.join(directory, f_name))
+                print(f"Removed an incompatible plugin: {f_name}!")
+                continue
+
             tmp_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
             tmp_reqirements = os.path.join(REQUIREMENTS_PATH, "plugins")
             os.makedirs(tmp_reqirements, exist_ok=True)
