@@ -21,7 +21,8 @@ options = [ "-d3", "-;+"]
 version = "3.10.11"
 options = [ "-d3",]
 ```
-    I think this is pretty self explanatory, except for the compiler. So `[compiler]` is basically global compiler profile, it is executed upon executing `pulse build` with no additional arguments. Below it is the way how you implement profiles. Profiles are meant to be run with `pulse build [profile]`
+    
+I think this is pretty self explanatory, except for the compiler. So `[compiler]` is basically global compiler profile, it is     executed upon executing `pulse build` with no additional arguments. Below it is the way how you implement profiles. Profiles     are meant to be run with `pulse build [profile]`
 
 ### config
 ##### Syntax:
