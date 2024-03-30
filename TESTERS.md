@@ -51,9 +51,9 @@ Upon user executing the command, it should load his last used username for the p
     5. Initialize the github repo?
     6. Whether to isolate the project with Pods.
 
-    If the initalization of github repo was answered positively it should create the repo with given credentials via pulse configure. You need token also.
+If the initalization of github repo was answered positively it should create the repo with given credentials via pulse configure. You need token also.
 
-    If the pulse isolation was answered positively, it will run pulse pods for isolation. More below.
+If the pulse isolation was answered positively, it will run pulse pods for isolation. More below.
 
 ### build
 ##### Syntax:
