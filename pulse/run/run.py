@@ -9,12 +9,12 @@ import json
 
 import pulse.download.download as download
 from pulse.core.core_dir import RUNTIME_PATH, PODS_PATH, REQUIREMENTS_PATH
-from pulse.ensure.ensure import ensure as ensure_packages
+from pulse.ensure.ensure import ensure_packages
 from pulse.run.run_server import server
 
 
 @click.command
-@click.option('--ensure', '-e')
+@click.option('--ensure', '-e', is_flag=True, default=False)
 def run(ensure: bool) -> None:
 
     # read the version
@@ -26,7 +26,7 @@ def run(ensure: bool) -> None:
     # read the toml
     data = {}
     json_data = {}
-    pods = os.path.exists(os.path.join(os.getcwd(), ".pods")) and os.path.isdir(os.path.join(os.getcwd(), ".pods"))
+    pods = os.path.exists(PODS_PATH) and os.path.isdir(PODS_PATH)
     with open("pulse.toml", 'r') as toml_config:
         data = toml.load(toml_config)
 
@@ -58,6 +58,7 @@ def run(ensure: bool) -> None:
 
     runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
     runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
+    json_data['pawn']['legacy_plugins'].clear()
 
     for file in os.listdir(os.path.join(REQUIREMENTS_PATH, "plugins")):
         full_file = os.path.join(REQUIREMENTS_PATH, "plugins", file)
