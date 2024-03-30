@@ -85,3 +85,65 @@ Runs the server
 ##### Behavior
 Upon executing the command, it executes omp-server. If .pods folder is present it ignores the version within pulse.toml and executes the one within .pods folder, otherwise it uses version in pulse.toml as a representation for the server. If version specified is not present (installed) it will install them automatically. Note that upon executing, it adds plugins from `project_folder/requirements/plugins` into `plugins` folder of the server also it moves the output file so the server has to execute something.
 
+### pods
+##### Syntax:
+    pulse pods
+
+##### Summary:
+Initialize project isolation.
+
+##### Behavior:
+Initializes project isolation by creating a `.pods` folder and installing a compiler or runtime of a certain version (taken from the cache or downloaded).
+
+### install
+##### Syntax:
+    pulse install [PACKAGE]
+
+##### Arguments:
+    package: str
+Package name. Branch, commit or tag specification is supported.
+| syntax  | meaning
+|----|-------
+| @  | branch
+| == | tag
+| :  | commit
+
+##### Summary:
+Install a pulse package.
+
+##### Example:
+    pulse install Ykpauneu/pmtest@main
+
+##### Behavior:
+The package is installed by checking for the `pulse.toml` file, if it exists, the package will be loaded, then the dependencies will be loaded (including dependencies for dependencies). Also if the package contains a `*.dll` / `*.so` plugin it will be moved to the plugins folder. Similar actions will be performed in the `project_folder/requirements` folder. The package will also be written to pulse.toml.
+
+### uninstall
+##### Syntax:
+    pulse uninstall [PACKAGE] [OPTIONS]
+
+##### Arguments:
+    package: str
+Package name. Branch, commit or tag specification is supported (same for `pulse install`).
+
+##### Options:
+    --recursive
+Removes the package with all dependencies.
+
+##### Summary:
+Uninstall pulse package.
+
+##### Example:
+    pulse uninstall Ykpauneu/pmtest==2.0.0
+
+##### Behavior:
+Removes the package from the Pulse Package Configuration and from `project_folder/requirements`. Note that the `--recursive` flag will also remove all dependencies of this package. After removal, the package entry will be deleted in `project_folder/pulse.toml`.
+
+### ensure
+##### Syntax:
+    pulse ensure
+
+##### Summary:
+Ensures all packages are present.
+
+##### Behavior:
+Reads the packages specified in `project_folder/pulse.toml`, then copies them from Pulse Package Configuration to `project_folder/requirements` (including plugins, dependencies, etc.), if they are not found they will be installed and automatically copied.
