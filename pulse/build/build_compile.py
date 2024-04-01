@@ -54,7 +54,8 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
     # now everything is fine, let's fire building with the options
     #create a path 
     directory, file = os.path.split(output)
-    os.makedirs(directory, exist_ok=True)
+    if not directory == "":
+        os.makedirs(directory, exist_ok=True)
 
     pawncc = [version_path_exe] + options + [entry]
     subprocess.run(pawncc)
