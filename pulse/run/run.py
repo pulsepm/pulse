@@ -27,10 +27,14 @@ def run(ensure: bool) -> None:
     data = {}
     json_data = {}
     pods = os.path.exists(PODS_PATH) and os.path.isdir(PODS_PATH)
+
+    runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
+    runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
+
     with open("pulse.toml", 'r') as toml_config:
         data = toml.load(toml_config)
 
-    with open(os.path.join(RUNTIME_PATH, data['runtime']['version'], "config.json"), 'r') as json_file:
+    with open(os.path.join(runtime_loc, "config.json"), 'r') as json_file:
         json_data = json.load(json_file)
 
     if ensure:
@@ -55,20 +59,18 @@ def run(ensure: bool) -> None:
     # move plugins and add them to config.json
     # plugins should be moved to ppc/runtime/version/plugins and added to the respective config.json through pulse.toml or in .pods if pods
     # now loop through plugins
-
-    runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
-    runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
     json_data['pawn']['legacy_plugins'].clear()
 
-    for file in os.listdir(os.path.join(REQUIREMENTS_PATH, "plugins")):
-        full_file = os.path.join(REQUIREMENTS_PATH, "plugins", file)
-        print(full_file)
-        if os.path.isfile(full_file):
-            os.makedirs(runtime_plugins, exist_ok=True)
+    if os.path.exists(os.path.join(REQUIREMENTS_PATH, "plugins")):
+        for file in os.listdir(os.path.join(REQUIREMENTS_PATH, "plugins")):
+            full_file = os.path.join(REQUIREMENTS_PATH, "plugins", file)
+            print(full_file)
+            if os.path.isfile(full_file):
+                os.makedirs(runtime_plugins, exist_ok=True)
 
-            shutil.copy(full_file, runtime_plugins)
-            # add them to config.json
-            json_data['pawn']['legacy_plugins'].append(file)
+                shutil.copy(full_file, runtime_plugins)
+                # add them to config.json
+                json_data['pawn']['legacy_plugins'].append(file)
 
     #move the mode
     shutil.copy(os.path.join(os.getcwd(), data['project']['output']), os.path.join(runtime_loc, "gamemodes"))
