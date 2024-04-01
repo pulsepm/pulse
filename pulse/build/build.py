@@ -34,7 +34,7 @@ def build(mode: str):
             click.echo("You don't have compiler version specified in your pulse.toml. Please specify it via `version = (version)` key, within compiler table or your compiler profile table.")
             return
 
-        compile(project_data['entry'], project_data['output'], compiler_data['version'], None if not 'options' in compiler_data else compiler_data['options'], None if not 'modules' in compiler_data else compiler_data['modules'], None if not 'legacy' in compiler_data else compiler_data['legacy'])
+        compile(project_data['entry'], project_data['output'], compiler_data['version'], None if not 'options' in compiler_data else compiler_data['options'], None if not 'modules' in compiler_data else compiler_data['modules'], None if not 'legacy' in compiler_data else compiler_data['legacy'], None if not 'requirements' in data else requirements)
 
     else:
         if not 'profiles' in compiler_data:
