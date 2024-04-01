@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from platform import system
 
 import click
 import toml
@@ -43,7 +44,8 @@ def write(data: dict, mode: str) -> None:
         with open(full_path, mode) as toml_file:
             toml.dump(data, toml_file)
 
-        subprocess.run(["attrib", "+H", CONFIG_PATH], check=True)
+        if system() == "Windows":
+            subprocess.run(["attrib", "+H", CONFIG_PATH], check=True)
 
     except PermissionError as pe:
         print("Permission error: " + pe)
