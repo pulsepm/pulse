@@ -31,26 +31,17 @@ def pods() -> None:
 
         if choice == 2:
             if not click.confirm(
-                "Are you sure? This action will delete the current runtimes/compiler files"
+                "Are you sure? This action will delete the current runtimes' files"
             ):
                 return click.echo("Canceled!")
 
-            click.echo("Select what needs to be modified:")
-            click.echo("1. Compiler\n2. Runtime")
-            choice_mod = click.prompt("Enter your choice", type=click.IntRange(1, 2))
-            if choice_mod == 1:
-                shutil.rmtree(os.path.join(PODS_PATH, "compiler"))
-                download.get_compiler()
-
-            if choice_mod == 2:
-                shutil.rmtree(os.path.join(PODS_PATH, "runtime"))
-                download.get_runtime()
+            shutil.rmtree(os.path.join(PODS_PATH, "runtime"))
+            download.get_runtime()
 
             return click.echo("Pulse pods has been successfully modified!")
 
         if choice == 3:
             return click.echo("Canceled!")
 
-    download.get_compiler()
     download.get_runtime()
     return click.echo("Pulse pods has been successfully initialized!")
