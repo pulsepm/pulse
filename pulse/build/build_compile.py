@@ -58,7 +58,3 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
 
     pawncc = [version_path_exe] + options + [entry]
     subprocess.run(pawncc)
-
-
-
-    
