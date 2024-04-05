@@ -42,12 +42,19 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
 
     if requirements:
         # list through toml requirements
-        for key, item in requirements.items():
-            requirement = re.split(r'/|@|==|:', str(item))[1].split('/')[0]
+        print(requirements)
+        for key, items in requirements.items():
+            print(f"items: {items}")
+            
+            for item in items:
+                requirement = re.split(r'/|@|==|:', str(item))[1].split('/')[0]
+                print(f"requirement: {requirement}")
 
             # append them
-            if not requirement in options:
-                options.append('-irequirements/'+f'{requirement}')
+                if not f"-irequirements/{requirement}" in options:
+                    options.append('-irequirements/'+f'{requirement}')
+                    print(f"OPTIONS: {options}")
+
 
 
     print(f"Here goes options: {options}")
