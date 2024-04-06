@@ -8,7 +8,7 @@ from io import BytesIO
 import re
 import requests
 import pulse.core.git.git_get as git_get
-import toml
+import pulse.package.utils as utils
 import shutil
 
 
@@ -87,14 +87,15 @@ def download_and_unzip_github_release(
 
 def download_package(owner: str, repo: str, package_path: str, version: str) -> None:
     os.makedirs(package_path)
-    try:
-        response = requests.get(
-            f"https://api.github.com/repos/{owner}/{repo}/{'zipball' if system() == 'Windows' else 'tarball'}/{version}",
-            stream=True,
-        )
+    response = requests.get(
+        f"https://api.github.com/repos/{owner}/{repo}/{'zipball' if system() == 'Windows' else 'tarball'}/{version}",
+        stream=True,
+    )
 
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+    if not response.ok:
+        return print(
+            f"Failed to get zip / tar archive. HTTP Status Code: {response.status_code}"
+        )
 
     if system() == "Windows":
         with ZipFile(BytesIO(response.content)) as z:
@@ -109,7 +110,7 @@ def download_package(owner: str, repo: str, package_path: str, version: str) -> 
     package_dir = copy_if_plugin(owner, repo, package_dir)
     libs = git_get.get_requirements(package_dir)
     if libs:
-        print(f"Found dependencies for {owner}/{repo}!\nInstalling..")
+        print(f"Found dependencies for {owner}/{repo}!")
         download_requirements(libs)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
@@ -123,21 +124,33 @@ def download_requirements(requirements: list) -> None:
     for requirement in requirements:
         re_requirement = re.split("/|@|==|:", requirement)
         try:
+            re_requirement[1]
+        except:
+            print("Found incorrect package name.")
+            continue
+
+        try:
             branch = re_requirement[2]
         except:
-            branch = git_get.default_branch(re_requirement[0], re_requirement[1])
+            branch = git_get.default_branch(re_requirement)
+            if not branch:
+                utils.echo_retrieve_fail(re_requirement, branch)
+
+            re_requirement.append(branch)
 
         install_path = os.path.join(
             PACKAGE_PATH, f"{re_requirement[0]}/{re_requirement[1]}"
         )
-        try:
-            response = requests.get(
-                f"https://api.github.com/repos/{re_requirement[0]}/{re_requirement[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
-                stream=True,
-            )
+        response = requests.get(
+            f"https://api.github.com/repos/{re_requirement[0]}/{re_requirement[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
+            stream=True,
+        )
 
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+        if not response.ok:
+            print(
+                f"Failed to get zip / tar archive. HTTP Status Code: {response.status_code}"
+            )
+            continue
 
         if os.path.exists(install_path):
             print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
@@ -163,7 +176,7 @@ def download_requirements(requirements: list) -> None:
         )
         libs = git_get.get_requirements(install_path_with_ver)
         shutil.copytree(
-            install_path_with_ver, os.path.join(REQUIREMENTS_PATH, re_requirement[1])
+            install_path_with_ver, os.path.join(REQUIREMENTS_PATH, re_requirement[1]), dirs_exist_ok=True
         )
         if libs:
             print(

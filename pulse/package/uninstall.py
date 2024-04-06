@@ -4,7 +4,7 @@ import click
 import re
 import toml
 from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH
-import pulse.core.git.git_download as git_download
+import pulse.package.utils as utils
 import pulse.core.git.git_get as git_get
 import shutil
 import platform
@@ -22,9 +22,18 @@ def uninstall(package: str, recursive: bool) -> None:
         return click.echo("Using many options are not supported!")
 
     try:
+        re_package[1]
+    except:
+        return click.echo("Incorrect entry of the package name.\nExample of package installation: author/repo.")
+
+    try:
         re_package[2]
     except:
-        re_package.append(git_get.default_branch(re_package[0], re_package[1]))
+        branch = git_get.default_branch(re_package)
+        if not branch:
+            return utils.echo_retrieve_fail(re_package, branch)
+
+        re_package.append(branch)
 
     package_path = os.path.join(
         PACKAGE_PATH, f"{re_package[0]}/{re_package[1]}/{re_package[2]}"
@@ -39,9 +48,8 @@ def uninstall(package: str, recursive: bool) -> None:
     with open(os.path.join(os.getcwd(), "pulse.toml"), "r") as file:
         data = toml.load(file)
 
-    syntax: str = "==" if "==" in package else ":" if ":" in package else "@"
     data["requirements"]["live"].remove(
-        f"{re_package[0]}/{re_package[1]}{syntax}{re_package[2]}"
+        f"{re_package[0]}/{re_package[1]}{utils.get_package_type(package)}{re_package[2]}"
     )
     with open(os.path.join(os.getcwd(), "pulse.toml"), "w") as file:
         toml.dump(data, file)
@@ -57,9 +65,19 @@ def remove_dependencies(dependencies) -> None:
     for dependence in dependencies:
         dependence = re.split("/|@|==|:", dependence)
         try:
+            dependence[1]
+        except:
+            print("Found incorrect package name.")
+            continue
+
+        try:
             dependence[2]
         except:
-            dependence.append(git_get.default_branch(dependence[0], dependence[1]))
+            branch = git_get.default_branch(dependence)
+            if not branch:
+                return utils.echo_retrieve_fail(dependence, branch)
+
+            dependence.append(branch)
 
         dependence_ppc_path = os.path.join(
             PACKAGE_PATH, f"{dependence[0]}/{dependence[1]}/{dependence[2]}"
