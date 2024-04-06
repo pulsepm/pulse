@@ -2,6 +2,7 @@ import requests
 from typing import Literal
 import os
 import toml
+import click
 
 
 def get_github_compiler_releases() -> list:
@@ -75,8 +76,11 @@ def default_branch(package: list) -> str | int:
 
 
 def get_requirements(dir) -> list | None:
-    with open(os.path.join(dir, "pulse.toml")) as f:
-        requirements = toml.load(f)
+    try:
+        with open(os.path.join(dir, "pulse.toml")) as f:
+            requirements = toml.load(f)
+    except:
+        return None
 
     try:
         requirements["requirements"]["live"]
