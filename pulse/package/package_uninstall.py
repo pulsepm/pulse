@@ -4,7 +4,7 @@ import click
 import re
 import toml
 from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH
-import pulse.package.utils as utils
+import pulse.package.package_utils as package_utils
 import pulse.core.git.git_get as git_get
 import shutil
 import platform
@@ -31,7 +31,7 @@ def uninstall(package: str, recursive: bool) -> None:
     except:
         branch = git_get.default_branch(re_package)
         if not branch:
-            return utils.echo_retrieve_fail(re_package, branch)
+            return package_utils.echo_retrieve_fail(re_package, branch)
 
         re_package.append(branch)
 
@@ -49,7 +49,7 @@ def uninstall(package: str, recursive: bool) -> None:
         data = toml.load(file)
 
     data["requirements"]["live"].remove(
-        f"{re_package[0]}/{re_package[1]}{utils.get_package_type(package)}{re_package[2]}"
+        f"{re_package[0]}/{re_package[1]}{package_utils.get_package_type(package)}{re_package[2]}"
     )
     with open(os.path.join(os.getcwd(), "pulse.toml"), "w") as file:
         toml.dump(data, file)
@@ -75,7 +75,7 @@ def remove_dependencies(dependencies) -> None:
         except:
             branch = git_get.default_branch(dependence)
             if not branch:
-                return utils.echo_retrieve_fail(dependence, branch)
+                return package_utils.echo_retrieve_fail(dependence, branch)
 
             dependence.append(branch)
 

@@ -4,9 +4,9 @@ from pulse.config.config_configure import configure
 from pulse.init.init import init
 from pulse.pods.pods import pods
 from pulse.build.build import build
-from pulse.package.install import install
-from pulse.package.uninstall import uninstall
-from pulse.package.ensure import ensure
+from pulse.package.package_install import install
+from pulse.package.package_uninstall import uninstall
+from pulse.package.package_ensure import ensure
 from pulse.run.run import run
 
 

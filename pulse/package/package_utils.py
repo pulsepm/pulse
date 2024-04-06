@@ -5,6 +5,7 @@ import os
 def get_package_type(package: str) -> str | None:
     return "==" if "==" in package else ":" if ":" in package else "@"
 
+
 def echo_retrieve_fail(package: list, code: int) -> str:
     return click.echo(f"Failed to retrieve package: {package[0]}/{package[1]} (code: {code})!")
 

@@ -9,7 +9,7 @@ import json
 
 import pulse.download.download as download
 from pulse.core.core_dir import RUNTIME_PATH, PODS_PATH, REQUIREMENTS_PATH
-from pulse.package.ensure import ensure_packages
+from pulse.package.package_ensure import ensure_packages
 from pulse.run.run_server import server
 
 

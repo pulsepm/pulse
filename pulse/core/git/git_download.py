@@ -8,7 +8,7 @@ from io import BytesIO
 import re
 import requests
 import pulse.core.git.git_get as git_get
-import pulse.package.utils as utils
+import pulse.package.package_utils as package_utils
 import shutil
 
 
@@ -134,7 +134,7 @@ def download_requirements(requirements: list) -> None:
         except:
             branch = git_get.default_branch(re_requirement)
             if not branch:
-                utils.echo_retrieve_fail(re_requirement, branch)
+                package_utils.echo_retrieve_fail(re_requirement, branch)
 
             re_requirement.append(branch)
 
