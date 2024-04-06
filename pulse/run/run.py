@@ -9,7 +9,7 @@ import json
 
 import pulse.download.download as download
 from pulse.core.core_dir import RUNTIME_PATH, PODS_PATH, REQUIREMENTS_PATH
-from pulse.ensure.ensure import ensure_packages
+from pulse.package.package_ensure import ensure_packages
 from pulse.run.run_server import server
 
 
@@ -45,13 +45,13 @@ def run(ensure: bool) -> None:
         os.path.join(PODS_PATH, "runtime") if pods else os.path.join(RUNTIME_PATH, data['runtime']['version']), "omp-server.exe" if system == "Windows" else "omp-server"
     )
 
-    # if pods, just run the server from 
+    # if pods, just run the server from
     if not os.path.exists(file_name) and not pods:
         # read the toml
         if 'version' in data['runtime']:
             click.echo("There's no downloaded runtimes. Downloading the specified one...")
             download.get_asset('runtime', data['runtime']['version'])
-        
+
         else:
             click.echo("No specified version") # Fatal here
             return
@@ -74,7 +74,7 @@ def run(ensure: bool) -> None:
 
     #move the mode
     shutil.copy(os.path.join(os.getcwd(), data['project']['output']), os.path.join(runtime_loc, "gamemodes"))
-            
+
     with open(os.path.join(runtime_loc, "config.json"), 'w') as json_file:
         json_data['pawn']['main_scripts'].clear()
         json_data['pawn']['main_scripts'].append(os.path.basename(data['project']['output'][:-4]))

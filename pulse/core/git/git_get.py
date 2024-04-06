@@ -42,45 +42,36 @@ def get_github_runtime_releases() -> list:
 
 
 def get_github_repo(
-    owner: str,
-    repo: str,
-    syntax: str,
-    type: Literal["branch", "commit", "version"] = None,
-) -> list:
-    try:
-        if type == "branch" or type == "commit":
-            url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{syntax}"
+    package: list,
+    type: Literal["@", ":", "=="]
+) -> list | int:
+    if type == "@" or type == ":":
+        url = f"https://api.github.com/repos/{package[0]}/{package[1]}/git/trees/{package[2]}"
 
-        if type == "version":
-            url = f"https://api.github.com/repos/{owner}/{repo}/git/refs/tags/{syntax}"
+    if type == "==":
+        url = f"https://api.github.com/repos/{package[0]}/{package[1]}/git/refs/tags/{package[2]}"
 
-        if not type:
-            url = f"https://api.github.com/repos/{owner}/{repo}/contents"
+    if not type:
+        url = f"https://api.github.com/repos/{package[0]}/{package[1]}/contents"
 
-        response = requests.get(url)
+    response = requests.get(url)
+    if not response.ok:
+        return False
 
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+    if type == "==":
+        tmp_ = response.json()
+        return get_github_repo(package[0], package[1], syntax=tmp_["object"]["sha"])
 
-    else:
-        if type == "version":
-            tmp_ = response.json()
-            return get_github_repo(owner, repo, tmp_["object"]["sha"], type="commit")
-
-        else:
-            return response.json()
+    return response.json()
 
 
-def default_branch(owner: str, repo: str) -> str:
-    try:
-        url = f"https://api.github.com/repos/{owner}/{repo}"
-        response = requests.get(url)
+def default_branch(package: list) -> str | int:
+    url = f"https://api.github.com/repos/{package[0]}/{package[1]}"
+    response = requests.get(url)
+    if not response.ok:
+        return response.status_code
 
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
-    else:
-        return response.json()["default_branch"]
+    return response.json()["default_branch"]
 
 
 def get_requirements(dir) -> list | None:

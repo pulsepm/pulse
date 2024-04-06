@@ -6,8 +6,8 @@ import toml
 from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH
 import pulse.core.git.git_download as git_download
 import pulse.core.git.git_get as git_get
+import pulse.package.package_utils as package_utils
 import shutil
-import platform
 
 
 @click.command
@@ -35,10 +35,16 @@ def ensure_packages() -> None:
         try:
             re_package[2]
         except:
-            re_package.append(git_get.default_branch(re_package[0], re_package[1]))
             click.echo(
-                "No tag, commit, or branch was specified in the requirements. The default branch name will be used!"
+                f"No tag, commit, or branch was specified in the requirements for {re_package[0]}/{re_package[1]}. The default branch name will be used!"
             )
+
+            branch = git_get.default_branch(re_package)
+            if not branch:
+                click.echo("Found incorrect package name.")
+                continue
+
+            re_package.append(branch)
 
         package_path = os.path.join(
             PACKAGE_PATH, f"{re_package[0]}/{re_package[1]}/{re_package[2]}"
