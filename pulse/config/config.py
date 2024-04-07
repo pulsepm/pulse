@@ -88,7 +88,7 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
 
     elif choice == 3:
         print(toml_data)
-        write(toml_data, "w")
+        write(toml_data, "wb")
 
     elif choice == 4:
         sys.exit()
@@ -112,7 +112,7 @@ def create() -> None:
     git_token = click.prompt("Input the github access token.", type=str)
     data = {"last_username": git_name, "user": git_name, "token": git_token}
 
-    write(data, "w")
+    write(data, "wb")
 
 
 def load() -> dict:

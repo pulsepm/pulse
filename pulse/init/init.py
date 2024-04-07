@@ -43,7 +43,7 @@ def init() -> None:
 
     output = str(entry).replace(".pwn", ".amx")
     initialize(project, name, repo, pods, entry, output)
-    config.write(data, "w")
+    config.write(data, "wb")
 
     if create:
         click.secho("Repository has been created successfully", fg="green")
