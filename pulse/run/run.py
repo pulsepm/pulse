@@ -4,7 +4,7 @@ import subprocess
 import shutil
 
 import click
-import toml
+import tomli
 import json
 
 import pulse.download.download as download
@@ -31,8 +31,8 @@ def run(ensure: bool) -> None:
     runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
     runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
 
-    with open("pulse.toml", 'r') as toml_config:
-        data = toml.load(toml_config)
+    with open("pulse.toml", 'rb') as toml_config:
+        data = tomli.load(toml_config)
 
     with open(os.path.join(runtime_loc, "config.json"), 'r') as json_file:
         json_data = json.load(json_file)

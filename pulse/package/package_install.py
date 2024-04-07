@@ -2,7 +2,6 @@ import os
 
 import click
 import re
-import toml
 from pulse.core.core_dir import PACKAGE_PATH
 import pulse.core.git.git_download as git_download
 import pulse.core.git.git_get as git_get

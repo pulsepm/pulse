@@ -1,6 +1,6 @@
 import click
 import os
-import toml
+import tomli
 import subprocess
 
 from .build_compile import compile
@@ -14,8 +14,8 @@ def build(mode: str):
         click.echo('This is not pulse package.')
         return
     # pulse toml exists, read it
-    with(open('pulse.toml', 'r')) as toml_file:
-        data = toml.load(toml_file)
+    with(open('pulse.toml', 'rb')) as toml_file:
+        data = tomli.load(toml_file)
 
     # i just realized i might not need to check for pods folder and generally pods having the compiler folder so just go with cached compiler for now
     project_data = data['project']
@@ -24,7 +24,7 @@ def build(mode: str):
 
     if not 'compiler' in data:
         click.echo("You have to specify compiler options using [compiler] table.")
-        return 
+        return
 
     compiler_data = data['compiler']
 

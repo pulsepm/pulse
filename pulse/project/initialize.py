@@ -1,6 +1,6 @@
 import os
 
-import toml
+import tomli_w
 
 import pulse.core.git.git_clone as git_clone
 import pulse.download.download as download
@@ -43,8 +43,8 @@ def initialize(
     toml_config = os.path.join(current_dir, "pulse.toml")
     readme = os.path.join(current_dir, "README.md")
 
-    with open(toml_config, "w") as toml_file:
-        toml.dump(data, toml_file)
+    with open(toml_config, "wb") as toml_file:
+        tomli_w.dump(data, toml_file, multiline_strings=True)
 
     with open(readme, "r+") as md_file:
         md_data = md_file.read()
