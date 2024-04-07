@@ -1,7 +1,7 @@
 import requests
 from typing import Literal
 import os
-import toml
+import tomli
 import click
 
 
@@ -77,8 +77,8 @@ def default_branch(package: list) -> str | int:
 
 def get_requirements(dir) -> list | None:
     try:
-        with open(os.path.join(dir, "pulse.toml")) as f:
-            requirements = toml.load(f)
+        with open(os.path.join(dir, "pulse.toml"), mode="rb") as f:
+            requirements = tomli.load(f)
     except:
         return None
 

@@ -2,7 +2,7 @@ import os
 
 import click
 import re
-import toml
+import tomli
 from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH
 import pulse.core.git.git_download as git_download
 import pulse.core.git.git_get as git_get
@@ -23,8 +23,8 @@ def ensure_packages() -> None:
     if not os.path.exists(os.path.join(current_path, "pulse.toml")):
         return click.echo("The pulse.toml file was not found..")
 
-    with open(os.path.join(current_path, "pulse.toml")) as f:
-        data = toml.load(f)
+    with open(os.path.join(current_path, "pulse.toml"), mode="rb") as f:
+        data = tomli.load(f)
 
     if not "requirements" in data:
         return click.echo("No requirements were found in pulse.toml..")

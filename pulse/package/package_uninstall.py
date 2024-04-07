@@ -2,7 +2,8 @@ import os
 
 import click
 import re
-import toml
+import tomli
+import tomli_w
 from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH
 import pulse.package.package_utils as package_utils
 import pulse.core.git.git_get as git_get
@@ -46,16 +47,16 @@ def uninstall(package: str, recursive: bool) -> None:
         if dependencies:
             remove_dependencies(dependencies)
 
-    with open(os.path.join(os.getcwd(), "pulse.toml"), "r") as file:
-        data = toml.load(file)
+    with open(os.path.join(os.getcwd(), "pulse.toml"), "rb") as file:
+        data = tomli.load(file)
 
     package_name: str = f"{re_package[0]}/{re_package[1]}{package_utils.get_package_type(package)}{re_package[2]}"
     if package_name in data["requirements"]["live"]:
         data["requirements"]["live"].remove(
             package_name
         )
-        with open(os.path.join(os.getcwd(), "pulse.toml"), "w") as file:
-            toml.dump(data, file)
+        with open(os.path.join(os.getcwd(), "pulse.toml"), "wb") as file:
+            tomli_w.dump(data, file, multiline_strings=True)
 
         click.echo(f"Removed package: {package_name} from pulse.toml.")
 
