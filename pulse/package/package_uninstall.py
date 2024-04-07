@@ -43,7 +43,8 @@ def uninstall(package: str, recursive: bool) -> None:
 
     if recursive:
         dependencies = git_get.get_requirements(package_path)
-        remove_dependencies(dependencies)
+        if dependencies:
+            remove_dependencies(dependencies)
 
     with open(os.path.join(os.getcwd(), "pulse.toml"), "r") as file:
         data = toml.load(file)
