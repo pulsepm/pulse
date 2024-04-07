@@ -43,16 +43,21 @@ def uninstall(package: str, recursive: bool) -> None:
 
     if recursive:
         dependencies = git_get.get_requirements(package_path)
-        remove_dependencies(dependencies)
+        if dependencies:
+            remove_dependencies(dependencies)
 
     with open(os.path.join(os.getcwd(), "pulse.toml"), "r") as file:
         data = toml.load(file)
 
-    data["requirements"]["live"].remove(
-        f"{re_package[0]}/{re_package[1]}{package_utils.get_package_type(package)}{re_package[2]}"
-    )
-    with open(os.path.join(os.getcwd(), "pulse.toml"), "w") as file:
-        toml.dump(data, file)
+    package_name: str = f"{re_package[0]}/{re_package[1]}{package_utils.get_package_type(package)}{re_package[2]}"
+    if package_name in data["requirements"]["live"]:
+        data["requirements"]["live"].remove(
+            package_name
+        )
+        with open(os.path.join(os.getcwd(), "pulse.toml"), "w") as file:
+            toml.dump(data, file)
+
+        click.echo(f"Removed package: {package_name} from pulse.toml.")
 
     remove_if_plugin(re_package[0], re_package[1])
     shutil.rmtree(package_path)

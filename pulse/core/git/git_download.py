@@ -86,7 +86,7 @@ def download_and_unzip_github_release(
 
 
 def download_package(owner: str, repo: str, package_path: str, version: str) -> None:
-    os.makedirs(package_path)
+    os.makedirs(package_path, exist_ok=True)
     response = requests.get(
         f"https://api.github.com/repos/{owner}/{repo}/{'zipball' if system() == 'Windows' else 'tarball'}/{version}",
         stream=True,
@@ -114,7 +114,7 @@ def download_package(owner: str, repo: str, package_path: str, version: str) -> 
         download_requirements(libs)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
-    shutil.copytree(package_dir, requirements)
+    shutil.copytree(package_dir, requirements, dirs_exist_ok=True)
 
 
 def download_requirements(requirements: list) -> None:
