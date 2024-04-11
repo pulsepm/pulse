@@ -26,17 +26,20 @@ def init() -> None:
         default_name = data["last_username"]
 
     name = click.prompt(
-        "Your name for publishing? Should be github username",
+        "Your GitHub username",
         default=default_name if default_name != "NO_NAME_BRO" else None,
     )
     data["last_username"] = name
 
     project = click.prompt(
-        "Enter the name for your project. It will be used as a project name"
+        "Project name"
     )
-    repo = click.prompt("Enter the name for your github repository.")
-    entry = click.prompt("Input the name of your entry file", default="main.pwn")
-    create = click.confirm("Initialize the repo?", default=False)
+    repo = click.prompt(
+        "Repository name",
+        default=project,
+    )
+    entry = click.prompt("Name of your entry file", default="main.pwn")
+    create = click.confirm("Initialize git repository?", default=False)
     pods = click.confirm(
         "Isolate the project - Pulse Pods? You can always do it later", default=False
     )

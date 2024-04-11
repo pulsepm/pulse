@@ -18,7 +18,7 @@ def get_compiler(isolate: bool = True) -> str:
     Returns:
         None
     """
-    click.echo("Select the version of the compiler you would like to install.")
+    click.echo("Select the compiler you would like to use.")
     for i, release in enumerate(git_get.get_github_compiler_releases(), start=1):
         compilers_dict[i] = release["name"]
         click.echo(f"{i}. {release['name']}")
