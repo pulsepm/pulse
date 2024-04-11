@@ -18,7 +18,7 @@ def get_runtime(isolate: bool = True) -> None:
     Returns:
         None
     """
-    click.echo("Select the version of the runtime you would like to install.")
+    click.echo("Select the runtime you would like to use.")
     for i, release in enumerate(git_get.get_github_runtime_releases(), start=1):
         runtimes_dict[i] = release["name"]
         click.echo(f"{i}. {release['name']}")

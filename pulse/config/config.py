@@ -20,7 +20,6 @@ def exists() -> bool:
         bool: True if the configuration file exists, False otherwise.
     """
     full_path = os.path.join(CONFIG_PATH, "pulseconfig.toml")
-    print(CONFIG_PATH)
 
     return os.path.exists(full_path)
 
@@ -132,7 +131,6 @@ def load() -> dict:
     try:
         with open(full_path, "rb") as file:
             toml_data = tomli.load(file)
-            print(toml_data)
 
     except tomli.TOMLDecodeError as e:
         print(f"Error decoding TOML: {e}")

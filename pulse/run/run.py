@@ -16,6 +16,9 @@ from pulse.run.run_server import server
 @click.command
 @click.option('--ensure', '-e', is_flag=True, default=False)
 def run(ensure: bool) -> None:
+    """
+    Start the project.
+    """
 
     # read the version
     if not os.path.exists(os.path.join(os.getcwd(), "pulse.toml")):

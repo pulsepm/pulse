@@ -8,6 +8,9 @@ from .build_compile import compile
 @click.command
 @click.argument("mode", default="__global__mode__")
 def build(mode: str):
+    """
+    Build the project.
+    """
     data = {}
 
     if not os.path.exists(os.path.join(os.getcwd(), 'pulse.toml')):
