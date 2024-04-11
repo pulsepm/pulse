@@ -65,19 +65,18 @@ def is_toml_package(git_repo: list | dict) -> bool:
         git_repo = list(git_repo.values())
 
     is_toml: bool = False
-    if isinstance(git_repo, list):
-        for file in git_repo:
-            try:
-                file["path"]
-            except:
-                if isinstance(file, list):
-                    for i in file:
-                        if "pulse.toml" in i["path"]:
-                            is_toml = True
-                            break
-            else:
-                if "pulse.toml" in file["path"]:
-                    is_toml = True
-                    break
+    for file in git_repo:
+        try:
+            file["path"]
+        except:
+            if isinstance(file, list):
+                for i in file:
+                    if "pulse.toml" in i["path"]:
+                        is_toml = True
+                        break
+        else:
+            if "pulse.toml" in file["path"]:
+                is_toml = True
+                break
 
     return is_toml
