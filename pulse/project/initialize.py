@@ -19,13 +19,14 @@ def initialize(
     """
 
     current_dir = os.getcwd()
+    project_dir = os.path.join(current_dir, repo_name)
     project_table = {"name": name, "publisher": publisher, "repo": repo_name, "entry": entry, "output": output}
 
     server = None
     compiler_data = None
 
-    if any(os.listdir(current_dir)):
-        print("Fatal error: Working directory must be empty.")
+    if os.path.isdir(project_dir):
+        print(f"Fatal error: Folder {repo_name} already exists")
         return
 
     git_clone.clone_github_repo("https://github.com/pulsepm/boilerplate", current_dir)
@@ -40,8 +41,8 @@ def initialize(
 
     data = {"project": project_table, "runtime": server, "compiler": compiler_data}
 
-    toml_config = os.path.join(current_dir, "pulse.toml")
-    readme = os.path.join(current_dir, "README.md")
+    toml_config = os.path.join(project_dir, "pulse.toml")
+    readme = os.path.join(project_dir, "README.md")
 
     with open(toml_config, "wb") as toml_file:
         tomli_w.dump(data, toml_file, multiline_strings=True)
