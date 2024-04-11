@@ -20,6 +20,7 @@ def exists() -> bool:
         bool: True if the configuration file exists, False otherwise.
     """
     full_path = os.path.join(CONFIG_PATH, "pulseconfig.toml")
+    print(CONFIG_PATH)
 
     return os.path.exists(full_path)
 
@@ -59,8 +60,11 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
     Choices:
         1: Modify GitHub username.
         2: Modify GitHub access token.
-        3: Print current configuration.
-        4: Exit.
+        3. Set print of debug messages.
+        4. Set print of info messages.
+        5. Set stroke dumps.
+        7: Exit with saving.
+        7: Exit.
 
     Recursively calls itself after each modification.
 
@@ -86,10 +90,25 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
         modify(choice)
 
     elif choice == 3:
+        git_token = click.confirm("Log debug messages?")
+        toml_data["debug"] = git_token
+        modify(choice)
+
+    elif choice == 4:
+        git_token = click.confirm("Log info messages?")
+        toml_data["info"] = git_token
+        modify(choice)
+
+    elif choice == 5:
+        git_token = click.confirm("Dump strokes?")
+        toml_data["stroke"] = git_token
+        modify(choice)
+
+    elif choice == 6:
         print(toml_data)
         write(toml_data, "wb")
 
-    elif choice == 4:
+    elif choice == 7:
         sys.exit()
 
     else:
@@ -131,6 +150,7 @@ def load() -> dict:
     try:
         with open(full_path, "rb") as file:
             toml_data = tomli.load(file)
+            print(toml_data)
 
     except tomli.TOMLDecodeError as e:
         print(f"Error decoding TOML: {e}")
