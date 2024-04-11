@@ -65,7 +65,11 @@ def ensure_packages() -> None:
 
         dependencies = git_get.get_requirements(package_path)
         if not dependencies:
-            click.echo(f"Failed to find pulse.toml or read for dependencies ({re_package[0]}/{re_package[1]})")
+            click.echo(f"Failed to find pulse.toml or read for dependencies ({re_package[0]}/{re_package[1]})!")
+            click.echo(f"Package {re_package[0]}/{re_package[1]} will be reinstalled")
+            git_download.download_package(
+                re_package[0], re_package[1], os.path.join(PACKAGE_PATH, f"{re_package[0]}/{re_package[1]}"), re_package[2]
+            )
             continue
 
         ensure_dependencies(dependencies)
