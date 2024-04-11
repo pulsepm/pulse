@@ -19,14 +19,14 @@ def initialize(
     """
 
     current_dir = os.getcwd()
-    project_dir = os.path.join(current_dir, name)
+    project_dir = os.path.join(current_dir, repo_name)
     project_table = {"name": name, "publisher": publisher, "repo": repo_name, "entry": entry, "output": output}
 
     server = None
     compiler_data = None
 
     if os.path.isdir(project_dir):
-        print(f"Fatal error: Folder {name} already exists")
+        print(f"Fatal error: Folder {repo_name} already exists")
         return
 
     git_clone.clone_github_repo("https://github.com/pulsepm/boilerplate", current_dir)
