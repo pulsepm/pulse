@@ -81,7 +81,7 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
         modify(choice)
 
     elif choice == 2:
-        git_token = click.prompt("Input your new github access token")
+        git_token = click.prompt("Input your new GitHub access token")
         toml_data["token"] = git_token
         modify(choice)
 
@@ -107,8 +107,8 @@ def create() -> None:
         None
     """
     click.echo("Configuration file doesn't exist. Let's create a new one.")
-    git_name = click.prompt("Input the github username.", type=str)
-    git_token = click.prompt("Input the github access token.", type=str)
+    git_name = click.prompt("Your GitHub username", type=str)
+    git_token = click.prompt("Your GitHub access token (https://github.com/settings/personal-access-tokens/new)", type=str)
     data = {"last_username": git_name, "user": git_name, "token": git_token}
 
     write(data, "wb")
