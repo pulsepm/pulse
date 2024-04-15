@@ -11,7 +11,7 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
     
     # let's just assume this is our scheme, correct this
     version_path_exe = os.path.join(COMPILER_PATH, version, "pawncc.exe" if platform.system() == "Windows" else "pawncc")
-    version_path_lib = os.path.join(COMPILER_PATH, version, "pawnc.dll" if platform.system() == "Windows" else "pawnc.so")
+    version_path_lib = os.path.join(COMPILER_PATH, version, "pawnc.dll" if platform.system() == "Windows" else "libpawnc.so")
 
     if not os.path.exists(entry):
         return print("Project doesn't have an entry point.")
