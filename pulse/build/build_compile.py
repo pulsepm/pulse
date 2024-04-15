@@ -65,4 +65,7 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
         os.makedirs(directory, exist_ok=True)
 
     pawncc = [version_path_exe] + options + [entry]
-    subprocess.run(pawncc)
+    env = os.environ.copy()
+    env["LD_LIBRARY_PATH"] = os.path.join(COMPILER_PATH, version)
+    
+    subprocess.run(pawncc, env=env)
