@@ -22,7 +22,7 @@ def build(mode: str):
 
     # i just realized i might not need to check for pods folder and generally pods having the compiler folder so just go with cached compiler for now
     project_data = data['project']
-    requirements = data['requirements']
+    requirements = data.get('requirements')
     print(requirements)
 
     if not 'compiler' in data:
