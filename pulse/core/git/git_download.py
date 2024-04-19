@@ -4,6 +4,7 @@ from zipfile import ZipFile
 from platform import system
 from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH
 from io import BytesIO
+from git import RemoteProgress, Repo
 
 import re
 import requests
@@ -85,33 +86,29 @@ def download_and_unzip_github_release(
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
 
-def download_package(owner: str, repo: str, package_path: str, version: str) -> None:
+def download_package(
+    owner: str, repo: str, package_path: str, version: str, is_commit: bool = False
+) -> None:
     os.makedirs(package_path, exist_ok=True)
-    response = requests.get(
-        f"https://api.github.com/repos/{owner}/{repo}/{'zipball' if system() == 'Windows' else 'tarball'}/{version}",
-        stream=True,
-    )
-
-    if not response.ok:
-        return print(
-            f"Failed to get zip / tar archive. HTTP Status Code: {response.status_code}"
-        )
-
-    if system() == "Windows":
-        with ZipFile(BytesIO(response.content)) as z:
-            z.extractall(package_path)
-
-    if system() == "Linux":
-        with tarfile.open(BytesIO(response.content), "r:gz") as tar_ref:
-            tar_ref.extractall(package_path)
-
     package_dir = os.path.join(package_path, version)
-    os.rename(os.path.join(package_path, os.listdir(package_path)[0]), package_dir)
+    if not is_commit:
+        Repo.clone_from(
+            f"https://github.com/{owner}/{repo}.git",
+            package_dir,
+            single_branch=True,
+            branch=version,
+        )
+    else:
+        git_repo = Repo.clone_from(
+            f"https://github.com/{owner}/{repo}.git", package_dir, single_branch=True
+        )
+        git_repo.head.reset(commit=version, index=True, working_tree=True)
+
     package_dir = copy_if_plugin(owner, repo, package_dir)
-    libs = git_get.get_requirements(package_dir)
-    if libs:
+    dependencies = git_get.get_requirements(package_dir)
+    if dependencies:
         print(f"Found dependencies for {owner}/{repo}!")
-        download_requirements(libs)
+        download_requirements(dependencies)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
     shutil.copytree(package_dir, requirements, dirs_exist_ok=True)
@@ -135,49 +132,33 @@ def download_requirements(requirements: list) -> None:
             branch = git_get.default_branch(re_requirement)
             if not branch:
                 package_utils.echo_retrieve_fail(re_requirement, branch)
+                continue
 
             re_requirement.append(branch)
 
-        install_path = os.path.join(
+        pckg_path = os.path.join(
             PACKAGE_PATH, f"{re_requirement[0]}/{re_requirement[1]}"
         )
-        response = requests.get(
-            f"https://api.github.com/repos/{re_requirement[0]}/{re_requirement[1]}/{'zipball' if system() == 'Windows' else 'tarball'}/{branch}",
-            stream=True,
-        )
-
-        if not response.ok:
-            print(
-                f"Failed to get zip / tar archive. HTTP Status Code: {response.status_code}"
-            )
-            continue
-
-        if os.path.exists(install_path):
+        if os.path.exists(pckg_path):
             print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
             continue
 
-        os.makedirs(install_path, exist_ok=True)
-        if system() == "Windows":
-            with ZipFile(BytesIO(response.content)) as z:
-                z.extractall(install_path)
-
-        if system() == "Linux":
-            with tarfile.open(BytesIO(response.content), "r:gz") as tar_ref:
-                tar_ref.extractall(install_path)
-
-        print(f"Installed dependency: {os.listdir(install_path)[0]} in {install_path}")
-        install_path_with_ver = os.path.join(install_path, re_requirement[2])
-        os.rename(
-            os.path.join(install_path, os.listdir(install_path)[0]),
-            install_path_with_ver,
+        pckg_path_version = os.path.join(pckg_path, re_requirement[2])
+        Repo.clone_from(
+            f"https://github.com/{re_requirement[0]}/{re_requirement[1]}.git",
+            pckg_path_version,
+            single_branch=True,
+            branch=re_requirement[2],
+            progress=RemoteProgress(),
         )
-        install_path_with_ver = copy_if_plugin(
-            re_requirement[0], re_requirement[1], install_path_with_ver
+        print(
+            f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
         )
-        libs = git_get.get_requirements(install_path_with_ver)
-        shutil.copytree(
-            install_path_with_ver, os.path.join(REQUIREMENTS_PATH, re_requirement[1]), dirs_exist_ok=True
+        pckg_path_version = copy_if_plugin(
+            re_requirement[0], re_requirement[1], pckg_path_version
         )
+        libs = git_get.get_requirements(pckg_path_version)
+        copy_to_cwd_requirements(pckg_path_version, re_requirement[1])
         if libs:
             print(
                 f"Found dependencies for {re_requirement[0]}/{re_requirement[1]}!\nInstalling.."
@@ -188,7 +169,12 @@ def download_requirements(requirements: list) -> None:
 def copy_if_plugin(owner: str, repo: str, directory):
     for f_name in os.listdir(directory):
         if f_name.endswith(("dll", "so")):
-            if system() == "Windows" and f_name.endswith("so") or system() == "Linux" and f_name.endswith("dll"):
+            if (
+                system() == "Windows"
+                and f_name.endswith("so")
+                or system() == "Linux"
+                and f_name.endswith("dll")
+            ):
                 os.remove(os.path.join(directory, f_name))
                 continue
 
@@ -203,3 +189,9 @@ def copy_if_plugin(owner: str, repo: str, directory):
             continue
 
     return directory
+
+
+def copy_to_cwd_requirements(origin_path, package_name: str) -> None:
+    return shutil.copytree(
+        origin_path, os.path.join(REQUIREMENTS_PATH, package_name), dirs_exist_ok=True
+    )

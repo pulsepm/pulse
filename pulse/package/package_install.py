@@ -3,6 +3,7 @@ import os
 import click
 import re
 from pulse.core.core_dir import PACKAGE_PATH
+import git
 import pulse.core.git.git_download as git_download
 import pulse.core.git.git_get as git_get
 import pulse.package.package_utils as package_utils
@@ -24,7 +25,9 @@ def install(package: str) -> None:
     try:
         re_package[1]
     except:
-        return click.echo("Incorrect entry of the package name.\nExample of package installation: author/repo.")
+        return click.echo(
+            "Incorrect entry of the package name.\nExample of command: pulse install Author/Repo"
+        )
 
     package_path = os.path.join(PACKAGE_PATH, f"{re_package[0]}/{re_package[1]}")
     if os.path.exists(package_path):
@@ -39,13 +42,18 @@ def install(package: str) -> None:
 
         re_package.append(branch)
 
-    git_repo = git_get.get_github_repo(re_package, package_utils.get_package_type(package))
+    git_repo = git_get.get_github_repo(
+        re_package[0],
+        re_package[1],
+        re_package[2],
+        package_utils.get_package_type(package),
+    )
     if not git_repo:
         return package_utils.echo_retrieve_fail(re_package, branch)
 
     if not is_toml_package(git_repo):
         return click.echo(
-            f"Couldn't find pulse.toml!\n{re_package[0]}/{re_package[1]}is not a Pulse package!"
+            f"Couldn't find pulse.toml!\n{re_package[0]}/{re_package[1]} is not a Pulse package!"
         )
     click.echo(f"Installing: {re_package[0]}/{re_package[1]} ({re_package[2]})..")
     git_download.download_package(
@@ -53,8 +61,14 @@ def install(package: str) -> None:
         re_package[1],
         package_path,
         version=re_package[2],
+        is_commit=True if ":" in package else False,
     )
-    package_utils.write_requirements(re_package[0], re_package[1], package_utils.get_package_type(package), re_package[2])
+    package_utils.write_requirements(
+        re_package[0],
+        re_package[1],
+        package_utils.get_package_type(package),
+        re_package[2],
+    )
     click.echo(
         f"Successfully installed the library: {re_package[0]}/{re_package[1]} ({re_package[2]})!"
     )
