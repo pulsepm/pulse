@@ -25,7 +25,9 @@ def uninstall(package: str, recursive: bool) -> None:
     try:
         re_package[1]
     except:
-        return click.echo("Incorrect entry of the package name.\nExample of package installation: author/repo.")
+        return click.echo(
+            "Incorrect entry of the package name.\nExample of package installation: author/repo."
+        )
 
     try:
         re_package[2]
@@ -50,11 +52,11 @@ def uninstall(package: str, recursive: bool) -> None:
     with open(os.path.join(os.getcwd(), "pulse.toml"), "rb") as file:
         data = tomli.load(file)
 
-    package_name: str = f"{re_package[0]}/{re_package[1]}{package_utils.get_package_type(package)}{re_package[2]}"
+    package_name: str = (
+        f"{re_package[0]}/{re_package[1]}{package_utils.get_package_type(package)}{re_package[2]}"
+    )
     if package_name in data["requirements"]["live"]:
-        data["requirements"]["live"].remove(
-            package_name
-        )
+        data["requirements"]["live"].remove(package_name)
         with open(os.path.join(os.getcwd(), "pulse.toml"), "wb") as file:
             tomli_w.dump(data, file, multiline_strings=True)
 

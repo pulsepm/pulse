@@ -2,7 +2,7 @@ import requests
 from typing import Literal
 import os
 import tomli
-import click
+import pulse.package.package_utils as package_utils
 
 
 def get_github_compiler_releases() -> list:
@@ -43,17 +43,16 @@ def get_github_runtime_releases() -> list:
 
 
 def get_github_repo(
-    package: list,
-    type: Literal["@", ":", "=="]
-) -> list | int:
+    author: str, repo: str, syntax: str, type: Literal["@", ":", "=="]
+) -> list | bool:
     if type == "@" or type == ":":
-        url = f"https://api.github.com/repos/{package[0]}/{package[1]}/git/trees/{package[2]}"
+        url = f"https://api.github.com/repos/{author}/{repo}/git/trees/{syntax}"
 
     if type == "==":
-        url = f"https://api.github.com/repos/{package[0]}/{package[1]}/git/refs/tags/{package[2]}"
+        url = f"https://api.github.com/repos/{author}/{repo}/git/refs/tags/{syntax}"
 
     if not type:
-        url = f"https://api.github.com/repos/{package[0]}/{package[1]}/contents"
+        url = f"https://api.github.com/repos/{author}/{repo}/contents"
 
     response = requests.get(url)
     if not response.ok:
@@ -61,7 +60,7 @@ def get_github_repo(
 
     if type == "==":
         tmp_ = response.json()
-        return get_github_repo(package[0], package[1], syntax=tmp_["object"]["sha"])
+        return get_github_repo(author, repo, tmp_["object"]["sha"], ":")
 
     return response.json()
 
