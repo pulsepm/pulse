@@ -41,7 +41,9 @@ output = "gm/main.amx"
 version = "v1.2.0.2670"
 
 [requirements]
-live = [ "Ykpauneu/pmtest@main",]
+live = [
+    "Ykpauneu/pmtest@main",
+]
 
 [compiler]
 version = "3.10.11"
