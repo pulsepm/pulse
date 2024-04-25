@@ -35,5 +35,5 @@ def prompt_choices(welcome: bool = False) -> int:
     click.echo("6. Exit with saving")
     click.echo("7. Exit without saving")
 
-    choice = click.prompt("Enter your choice", type=click.IntRange(1, 4))
+    choice = click.prompt("Enter your choice", type=click.IntRange(1, 7))
     return choice
