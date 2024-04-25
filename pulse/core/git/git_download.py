@@ -91,7 +91,10 @@ def download_package(
 ) -> None:
     os.makedirs(package_path, exist_ok=True)
     package_dir = os.path.join(package_path, version)
+
     if not is_commit:
+        if os.path.exists(package_dir):
+            shutil.rmtree(package_dir)
         Repo.clone_from(
             f"https://github.com/{owner}/{repo}.git",
             package_dir,
@@ -99,6 +102,8 @@ def download_package(
             branch=version,
         )
     else:
+        if os.path.exists(package_dir):
+            shutil.rmtree(package_dir)
         git_repo = Repo.clone_from(
             f"https://github.com/{owner}/{repo}.git", package_dir, single_branch=True
         )
@@ -111,6 +116,8 @@ def download_package(
         download_requirements(dependencies)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
+    if os.path.exists(requirements):
+        shutil.rmtree(requirements)
     shutil.copytree(package_dir, requirements, dirs_exist_ok=True)
 
 
