@@ -63,7 +63,7 @@ def download_and_unzip_github_release(
         return
 
     if response.status_code == 200:
-        logging.debug("Asset download successful")
+        logging.debug("Asset downloading started..")
         os.makedirs(target_folder, exist_ok=True)
         asset_path = os.path.join(target_folder, asset_name)
 
@@ -84,7 +84,7 @@ def download_and_unzip_github_release(
 
         # Remove the downloaded asset file if needed
         os.remove(asset_path)
-        logging.debug(f"Asset downloaded and extracted to: {target_folder}")
+        logging.info(f"Asset downloaded and extracted to: {target_folder}")
 
     else:
         logging.fatal(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
@@ -94,6 +94,7 @@ def download_and_unzip_github_release(
 def download_package(
     owner: str, repo: str, package_path: str, version: str, is_commit: bool = False
 ) -> None:
+    logging.debug(f"Cloning repository ({owner}/{repo})..")
     os.makedirs(package_path, exist_ok=True)
     package_dir = os.path.join(package_path, version)
     if not is_commit:
@@ -149,6 +150,7 @@ def download_requirements(requirements: list) -> None:
             continue
 
         pckg_path_version = os.path.join(pckg_path, re_requirement[2])
+        logging.debug(f"Cloning repository as dependency ({re_requirement[0]}/{re_requirement[1]})..")
         Repo.clone_from(
             f"https://github.com/{re_requirement[0]}/{re_requirement[1]}.git",
             pckg_path_version,
