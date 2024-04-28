@@ -4,6 +4,10 @@ import subprocess
 
 import git
 
+import logging
+import pulse.logs.logs
+import pulse.stroke.stroke as stroke
+
 from pulse.core.core_url import Url
 
 
@@ -23,14 +27,20 @@ def clone_github_repo(repo_url: Url, destination_folder: str, no_git=True) -> No
         git.GitCommandError: If an error occurs during the cloning process.
     """
     try:
+        logging.debug("Cloning boilerplate repo as a starting point...")
         git.Repo.clone_from(repo_url, destination_folder)
         if no_git is True:
             path = os.path.join(destination_folder, ".git")
+            logging.debug("Determinating machine operative system...")
             if platform.system() == "Windows":
                 subprocess.run(["cmd", "/c", "rd", "/s", "/q", path], check=True)
+                logging.info("Windows operative system has been determinated.")
             else:
                 subprocess.run(["rm", "-rf", path], check=True)
+                logging.info("Linux operative system has been determinated.")
 
-        print(f"Repository cloned successfully to {destination_folder}")
+        logging.info(f"Repository cloned successfully to {destination_folder}")
     except git.GitCommandError as e:
-        print(f"Error cloning repository: {e}")
+        logging.fatal(f"Error cloning repository: {e}")
+        stroke.dump(3)
+        return

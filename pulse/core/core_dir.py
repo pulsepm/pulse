@@ -9,9 +9,11 @@ is_windows = system() == "Windows"
 if is_windows:
     CONFIG_PATH = os.path.join(os.path.expanduser("~"), 'AppData', 'Local', PROJECT_NAME, 'config')
     data_dir = os.path.join(os.path.expanduser("~"), 'AppData', 'Local', PROJECT_NAME, 'data')
+    STROKE_PATH = os.path.join(os.path.expanduser("~"), 'AppData', 'Local', PROJECT_NAME, 'stroke')
 else:
     CONFIG_PATH = os.path.join(os.environ.get('XDG_CONFIG_HOME', os.path.expanduser("~/.config")), PROJECT_NAME)
     data_dir = os.path.join(os.environ.get('XDG_DATA_HOME', os.path.expanduser("~/.local/share")), PROJECT_NAME)
+    STROKE_PATH = os.path.join(os.environ.get('XDG_STATE_HOME', os.path.expanduser("~/.local/state")), PROJECT_NAME)
 
 # Define other directories within the project directory
 RUNTIME_PATH = os.path.join(data_dir, "runtime")
