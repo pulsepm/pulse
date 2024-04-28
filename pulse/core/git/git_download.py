@@ -11,6 +11,8 @@ import requests
 import pulse.core.git.git_get as git_get
 import pulse.package.package_utils as package_utils
 import shutil
+import logging
+import pulse.stroke.stroke as stroke
 
 
 def download_and_unzip_github_release(
@@ -33,10 +35,9 @@ def download_and_unzip_github_release(
     api_url = f"https://api.github.com/repos/{owner}/{repo}/releases/tags/{tag}"
     response = requests.get(api_url)
 
-    if response.status_code != 200:
-        print(
-            f"Failed to get release information. HTTP Status Code: {response.status_code}"
-        )
+    if response.ok:
+        logging.fatal(f"Failed to get release information. HTTP Status Code: {response.status_code}")
+        stroke.dump(6)
         return
 
     release_info = response.json()
@@ -49,18 +50,20 @@ def download_and_unzip_github_release(
             break
 
     if asset_url is None:
-        print(f"Asset '{asset_name}' not found in the release.")
+        logging.fatal(f"Asset '{asset_name}' not found in the release.")
+        stroke.dump(3)
         return
 
     # Download the asset
     try:
         response = requests.get(asset_url, allow_redirects=True)
     except requests.exceptions.RequestException as e:
-        print(f"Failed to connect to the server: {e}")
+        logging.fatal(f"Failed to connect to the server: {e}")
+        stroke.dump(5)
         return
 
     if response.status_code == 200:
-        print("Asset download successful")
+        logging.info("Asset download successful")
         os.makedirs(target_folder, exist_ok=True)
         asset_path = os.path.join(target_folder, asset_name)
 
@@ -75,15 +78,17 @@ def download_and_unzip_github_release(
             with tarfile.open(asset_path, "r:gz") as tar_ref:
                 tar_ref.extractall(target_folder)
         else:
-            print(f"Unsupported asset type: {asset_name}")
+            logging.fatal(f"Unsupported asset type: {asset_name}")
+            stroke.dump(3)
             return
 
         # Remove the downloaded asset file if needed
         os.remove(asset_path)
-        print(f"Asset downloaded and extracted to: {target_folder}")
+        logging.info(f"Asset downloaded and extracted to: {target_folder}")
 
     else:
-        print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
+        logging.fatal(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
+        stroke.dump(6)
 
 
 def download_package(
@@ -107,7 +112,7 @@ def download_package(
     package_dir = copy_if_plugin(owner, repo, package_dir)
     dependencies = git_get.get_requirements(package_dir)
     if dependencies:
-        print(f"Found dependencies for {owner}/{repo}!")
+        logging.info(f"Found dependencies for {owner}/{repo}!")
         download_requirements(dependencies)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
@@ -123,7 +128,7 @@ def download_requirements(requirements: list) -> None:
         try:
             re_requirement[1]
         except:
-            print("Found incorrect package name.")
+            logging.warning("Found incorrect package name.")
             continue
 
         try:
@@ -140,7 +145,7 @@ def download_requirements(requirements: list) -> None:
             PACKAGE_PATH, f"{re_requirement[0]}/{re_requirement[1]}"
         )
         if os.path.exists(pckg_path):
-            print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
+            logging.info(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
             continue
 
         pckg_path_version = os.path.join(pckg_path, re_requirement[2])
@@ -151,7 +156,7 @@ def download_requirements(requirements: list) -> None:
             branch=re_requirement[2],
             progress=RemoteProgress(),
         )
-        print(
+        logging.info(
             f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
         )
         pckg_path_version = copy_if_plugin(
@@ -160,7 +165,7 @@ def download_requirements(requirements: list) -> None:
         libs = git_get.get_requirements(pckg_path_version)
         copy_to_cwd_requirements(pckg_path_version, re_requirement[1])
         if libs:
-            print(
+            logging.info(
                 f"Found dependencies for {re_requirement[0]}/{re_requirement[1]}!\nInstalling.."
             )
             download_requirements(libs)
@@ -178,7 +183,7 @@ def copy_if_plugin(owner: str, repo: str, directory):
                 os.remove(os.path.join(directory, f_name))
                 continue
 
-            print(f"Found plugin: {f_name} in {directory}!")
+            logging.info(f"Found plugin: {f_name} in {directory}!")
             tmp_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
             tmp_reqirements = os.path.join(REQUIREMENTS_PATH, "plugins")
             os.makedirs(tmp_reqirements, exist_ok=True)
