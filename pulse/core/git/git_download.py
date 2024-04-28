@@ -63,7 +63,7 @@ def download_and_unzip_github_release(
         return
 
     if response.status_code == 200:
-        logging.info("Asset download successful")
+        logging.debug("Asset download successful")
         os.makedirs(target_folder, exist_ok=True)
         asset_path = os.path.join(target_folder, asset_name)
 
@@ -84,7 +84,7 @@ def download_and_unzip_github_release(
 
         # Remove the downloaded asset file if needed
         os.remove(asset_path)
-        logging.info(f"Asset downloaded and extracted to: {target_folder}")
+        logging.debug(f"Asset downloaded and extracted to: {target_folder}")
 
     else:
         logging.fatal(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
