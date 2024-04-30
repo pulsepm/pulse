@@ -2,6 +2,7 @@ import requests
 from typing import Literal
 import os
 import tomli
+import json
 import pulse.package.package_utils as package_utils
 
 
@@ -74,17 +75,33 @@ def default_branch(package: list) -> str | int:
     return response.json()["default_branch"]
 
 
-def get_requirements(dir) -> list | None:
-    try:
-        with open(os.path.join(dir, "pulse.toml"), mode="rb") as f:
-            requirements = tomli.load(f)
-    except:
-        return None
+def get_requirements(directory, package_type: Literal["sampctl", "pulse"]) -> list | None:
+    if package_type == "pulse":
+        try:
+            with open(os.path.join(directory, "pulse.toml"), mode="rb") as f:
+                requirements = tomli.load(f)
+        except:
+            return None
 
-    try:
-        requirements["requirements"]["live"]
-    except:
-        return None
+        try:
+            requirements["requirements"]["live"]
+        except:
+            return None
 
-    else:
-        return requirements["requirements"]["live"]
+        else:
+            return requirements["requirements"]["live"]
+
+    if package_type == "sampctl":
+        try:
+            with open(os.path.join(directory, "pawn.json"), mode="r") as f:
+                requirements = json.load(f)
+        except:
+            return None
+
+        try:
+            requirements["dependencies"]
+        except:
+            return None
+
+        else:
+            return requirements["dependencies"]

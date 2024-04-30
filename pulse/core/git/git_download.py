@@ -3,7 +3,7 @@ import tarfile
 from zipfile import ZipFile
 from platform import system
 from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH
-from io import BytesIO
+from typing import Literal
 from git import RemoteProgress, Repo
 
 import re
@@ -87,7 +87,7 @@ def download_and_unzip_github_release(
 
 
 def download_package(
-    owner: str, repo: str, package_path: str, version: str, is_commit: bool = False
+    owner: str, repo: str, package_path: str, version: str, package_type: Literal["pulse", "sampctl"], is_commit: bool = False
 ) -> None:
     os.makedirs(package_path, exist_ok=True)
     package_dir = os.path.join(package_path, version)
@@ -109,20 +109,21 @@ def download_package(
         git_repo.head.reset(commit=version, index=True, working_tree=True)
 
     package_dir = copy_if_plugin(owner, repo, package_dir)
-    dependencies = git_get.get_requirements(package_dir)
+    dependencies = git_get.get_requirements(package_dir, package_type)
     if dependencies:
-        print(f"Found dependencies for {owner}/{repo}!")
-        download_requirements(dependencies)
+        print(f"Found dependencies for {owner}/{repo} ({package_type})!")
+        download_requirements(dependencies, package_type)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
     if os.path.exists(requirements):
         shutil.rmtree(requirements)
+
     shutil.copytree(package_dir, requirements, dirs_exist_ok=True)
 
 
-def download_requirements(requirements: list) -> None:
+def download_requirements(requirements: list, package_type: Literal["sampctl", "pulse"]) -> None:
     """
-    Download requirements from pulse package
+    Download requirements from pulse.toml or pawn.json
     """
     for requirement in requirements:
         re_requirement = re.split("/|@|==|:", requirement)
@@ -155,7 +156,6 @@ def download_requirements(requirements: list) -> None:
             pckg_path_version,
             single_branch=True,
             branch=re_requirement[2],
-            progress=RemoteProgress(),
         )
         print(
             f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
@@ -163,13 +163,13 @@ def download_requirements(requirements: list) -> None:
         pckg_path_version = copy_if_plugin(
             re_requirement[0], re_requirement[1], pckg_path_version
         )
-        libs = git_get.get_requirements(pckg_path_version)
+        libs = git_get.get_requirements(pckg_path_version, package_type)
         copy_to_cwd_requirements(pckg_path_version, re_requirement[1])
         if libs:
             print(
                 f"Found dependencies for {re_requirement[0]}/{re_requirement[1]}!\nInstalling.."
             )
-            download_requirements(libs)
+            download_requirements(libs, package_type)
 
 
 def copy_if_plugin(owner: str, repo: str, directory):

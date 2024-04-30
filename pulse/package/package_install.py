@@ -3,6 +3,7 @@ import os
 import click
 import re
 from pulse.core.core_dir import PACKAGE_PATH
+from typing import Literal
 import git
 import pulse.core.git.git_download as git_download
 import pulse.core.git.git_get as git_get
@@ -51,16 +52,18 @@ def install(package: str) -> None:
     if not git_repo:
         return package_utils.echo_retrieve_fail(re_package, branch)
 
-    if not is_toml_package(git_repo):
+    package_type = is_package(git_repo)
+    if not package_type:
         return click.echo(
-            f"Couldn't find pulse.toml!\n{re_package[0]}/{re_package[1]} is not a Pulse package!"
+            f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} is not a Pulse / sampctl package!"
         )
     click.echo(f"Installing: {re_package[0]}/{re_package[1]} ({re_package[2]})..")
     git_download.download_package(
         re_package[0],
         re_package[1],
         package_path,
-        version=re_package[2],
+        re_package[2],
+        package_type,
         is_commit=True if ":" in package else False,
     )
     package_utils.write_requirements(
@@ -74,11 +77,12 @@ def install(package: str) -> None:
     )
 
 
-def is_toml_package(git_repo: list | dict) -> bool:
+def is_package(git_repo: list | dict) -> Literal["pulse", "sampctl", False]:
     if isinstance(git_repo, dict):
         git_repo = list(git_repo.values())
 
     is_toml: bool = False
+    is_json: bool = False
     for file in git_repo:
         try:
             file["path"]
@@ -88,9 +92,17 @@ def is_toml_package(git_repo: list | dict) -> bool:
                     if "pulse.toml" in i["path"]:
                         is_toml = True
                         break
+
+                    if "pawn.json" in i["path"]:
+                        is_json = True
+                        break
         else:
             if "pulse.toml" in file["path"]:
                 is_toml = True
                 break
 
-    return is_toml
+            if "pawn.json" in file["path"]:
+                is_json = True
+                break
+
+    return "pulse" if is_toml else "sampctl" if is_json else False
