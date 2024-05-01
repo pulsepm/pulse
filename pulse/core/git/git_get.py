@@ -75,33 +75,20 @@ def default_branch(package: list) -> str | int:
     return response.json()["default_branch"]
 
 
-def get_requirements(directory, package_type: Literal["sampctl", "pulse"]) -> list | None:
-    if package_type == "pulse":
-        try:
-            with open(os.path.join(directory, "pulse.toml"), mode="rb") as f:
+def get_requirements(directory, package_type: Literal["pulse", "sampctl"]) -> list | None:
+    try:
+        with open(os.path.join(directory, "pulse.toml" if package_type == "pulse" else "pawn.json"), mode="rb" if package_type == "pulse" else "r") as f:
+            if package_type == "pulse":
                 requirements = tomli.load(f)
-        except:
-            return None
-
-        try:
-            requirements["requirements"]["live"]
-        except:
-            return None
-
-        else:
-            return requirements["requirements"]["live"]
-
-    if package_type == "sampctl":
-        try:
-            with open(os.path.join(directory, "pawn.json"), mode="r") as f:
+            else:
                 requirements = json.load(f)
-        except:
-            return None
+    except:
+        return None
 
-        try:
-            requirements["dependencies"]
-        except:
-            return None
+    try:
+        requirements["requirements"]["live"] if package_type == "pulse" else requirements["dependencies"]
+    except:
+        return None
 
-        else:
-            return requirements["dependencies"]
+    else:
+        return requirements["requirements"]["live"] if package_type == "pulse" else requirements["dependencies"]
