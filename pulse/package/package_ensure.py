@@ -64,6 +64,7 @@ def ensure_packages() -> None:
         ensure_path = os.path.join(REQUIREMENTS_PATH, re_package[1])
         if os.path.exists(ensure_path):
             shutil.rmtree(ensure_path)
+
         shutil.copytree(package_path, ensure_path, dirs_exist_ok=True)
         plugins_path = os.path.join(PLUGINS_PATH, f"{re_package[0]}/{re_package[1]}")
         if os.path.exists(plugins_path):

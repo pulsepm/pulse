@@ -87,7 +87,7 @@ def download_and_unzip_github_release(
 
 
 def download_package(
-    owner: str, repo: str, package_path: str, version: str, package_type: Literal["pulse", "sampctl"], is_commit: bool = False
+    owner: str, repo: str, package_path: str, version: str, package_type: Literal["pulse", "sampctl"], raw_syntax: str
 ) -> None:
     os.makedirs(package_path, exist_ok=True)
     package_dir = os.path.join(package_path, version)
@@ -95,24 +95,30 @@ def download_package(
     if os.path.exists(package_dir):
         shutil.rmtree(package_dir)
 
-    if not is_commit:
+    if raw_syntax.find(":"):
+        git_repo = Repo.clone_from(
+            f"https://github.com/{owner}/{repo}.git", package_dir, single_branch=True
+        )
+        git_repo.head.reset(commit=version, index=True, working_tree=True)
+
+    else:
         Repo.clone_from(
             f"https://github.com/{owner}/{repo}.git",
             package_dir,
             single_branch=True,
             branch=version,
         )
-    else:
-        git_repo = Repo.clone_from(
-            f"https://github.com/{owner}/{repo}.git", package_dir, single_branch=True
-        )
-        git_repo.head.reset(commit=version, index=True, working_tree=True)
 
     package_dir = copy_if_plugin(owner, repo, package_dir)
     dependencies = git_get.get_requirements(package_dir, package_type)
     if dependencies:
-        print(f"Found dependencies for {owner}/{repo} ({package_type})!")
+        print(f"Found for {owner}/{repo} ({package_type})!")
         download_requirements(dependencies, package_type)
+
+    resource = git_get.get_package_resources(package_dir, package_type)
+    if resource:
+        print(f"Found resource for {owner}/{repo} ({package_type})!")
+        download_resource(resource)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
     if os.path.exists(requirements):
@@ -167,9 +173,33 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
         copy_to_cwd_requirements(pckg_path_version, re_requirement[1])
         if libs:
             print(
-                f"Found dependencies for {re_requirement[0]}/{re_requirement[1]}!\nInstalling.."
+                f"Installing dependencies for {re_requirement[0]}/{re_requirement[1]}.."
             )
             download_requirements(libs, package_type)
+
+        resource = git_get.get_package_resources(pckg_path_version, package_type)
+        if resource:
+            print(f"Found resource for {re_requirement[0]}/{re_requirement[1]} ({package_type})!")
+            download_resource(resource)
+
+
+def download_resource(resource: tuple[str]) -> None:
+    owner, repo, release = resource
+    request = requests.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest")
+    response = request.json()
+    assets = response["assets"]
+    for asset in assets:
+        if re.match(release, asset["name"]):
+            resoure_path = os.path.join(PACKAGE_PATH, repo, release, asset["name"])
+            download_url = asset["browser_download_url"]
+            r = requests.get(download_url)
+            with open(resoure_path, "wb") as f:
+                f.write(r.content)
+
+    shutil.unpack_archive(resoure_path, resoure_path)
+    print(
+        f"Installed resource: {owner}/{repo}"
+    )
 
 
 def copy_if_plugin(owner: str, repo: str, directory):

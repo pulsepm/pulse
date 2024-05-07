@@ -64,7 +64,7 @@ def install(package: str) -> None:
         package_path,
         re_package[2],
         package_type,
-        is_commit=True if ":" in package else False,
+        package
     )
     package_utils.write_requirements(
         re_package[0],
@@ -73,7 +73,7 @@ def install(package: str) -> None:
         re_package[2],
     )
     click.echo(
-        f"Successfully installed the library: {re_package[0]}/{re_package[1]} ({re_package[2]})!"
+        f"Successfully installed library: {re_package[0]}/{re_package[1]} ({re_package[2]})!"
     )
 
 
