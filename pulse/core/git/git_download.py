@@ -4,7 +4,7 @@ from zipfile import ZipFile
 from platform import system
 from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH
 from typing import Literal
-from git import RemoteProgress, Repo
+from git import Repo
 
 import re
 import requests
@@ -185,18 +185,19 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
 
 def download_resource(resource: tuple[str]) -> None:
     owner, repo, release = resource
+    path = os.path.join(PLUGINS_PATH, owner, repo)
+    os.makedirs(path)
+
     request = requests.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest")
     response = request.json()
     assets = response["assets"]
     for asset in assets:
         if re.match(release, asset["name"]):
-            resoure_path = os.path.join(PACKAGE_PATH, repo, release, asset["name"])
             download_url = asset["browser_download_url"]
             r = requests.get(download_url)
-            with open(resoure_path, "wb") as f:
+            with open(os.path.join(path, asset["name"]), "wb") as f:
                 f.write(r.content)
 
-    shutil.unpack_archive(resoure_path, resoure_path)
     print(
         f"Installed resource: {owner}/{repo}"
     )
