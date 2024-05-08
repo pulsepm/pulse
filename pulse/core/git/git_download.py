@@ -1,6 +1,6 @@
 import os
 import tarfile
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 from platform import system
 from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH
 from typing import Literal
@@ -109,7 +109,6 @@ def download_package(
             branch=version,
         )
 
-    package_dir = copy_if_plugin(owner, repo, package_dir)
     dependencies = git_get.get_requirements(package_dir, package_type)
     if dependencies:
         print(f"Found for {owner}/{repo} ({package_type})!")
@@ -118,7 +117,7 @@ def download_package(
     resource = git_get.get_package_resources(package_dir, package_type)
     if resource:
         print(f"Found resource for {owner}/{repo} ({package_type})!")
-        download_resource(resource)
+        download_resource(package_dir, resource, package_type)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
     if os.path.exists(requirements):
@@ -166,9 +165,6 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
         print(
             f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
         )
-        pckg_path_version = copy_if_plugin(
-            re_requirement[0], re_requirement[1], pckg_path_version
-        )
         libs = git_get.get_requirements(pckg_path_version, package_type)
         copy_to_cwd_requirements(pckg_path_version, re_requirement[1])
         if libs:
@@ -180,10 +176,10 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
         resource = git_get.get_package_resources(pckg_path_version, package_type)
         if resource:
             print(f"Found resource for {re_requirement[0]}/{re_requirement[1]} ({package_type})!")
-            download_resource(resource)
+            download_resource(pckg_path_version, resource, package_type)
 
 
-def download_resource(resource: tuple[str]) -> None:
+def download_resource(origin_path, resource: tuple[str], package_type: Literal["sampctl", "pulse"]) -> None:
     owner, repo, release = resource
     path = os.path.join(PLUGINS_PATH, owner, repo)
     os.makedirs(path)
@@ -195,37 +191,21 @@ def download_resource(resource: tuple[str]) -> None:
         if re.match(release, asset["name"]):
             download_url = asset["browser_download_url"]
             r = requests.get(download_url)
-            with open(os.path.join(path, asset["name"]), "wb") as f:
+            archive = os.path.join(path, asset["name"])
+            with open(archive, "wb") as f:
                 f.write(r.content)
 
     print(
-        f"Installed resource: {owner}/{repo}"
+        f"Installed resource: {asset['name']} in {path}"
     )
-
-
-def copy_if_plugin(owner: str, repo: str, directory):
-    for f_name in os.listdir(directory):
-        if f_name.endswith(("dll", "so")):
-            if (
-                system() == "Windows"
-                and f_name.endswith("so")
-                or system() == "Linux"
-                and f_name.endswith("dll")
-            ):
-                os.remove(os.path.join(directory, f_name))
-                continue
-
-            print(f"Found plugin: {f_name} in {directory}!")
-            tmp_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
-            tmp_reqirements = os.path.join(REQUIREMENTS_PATH, "plugins")
-            os.makedirs(tmp_reqirements, exist_ok=True)
-            os.makedirs(tmp_dir, exist_ok=True)
-            shutil.copy2(os.path.join(directory, f_name), tmp_dir)
-            shutil.copy2(os.path.join(directory, f_name), tmp_reqirements)
-            os.remove(os.path.join(directory, f_name))
-            continue
-
-    return directory
+    required_plugin: str = git_get.get_resource_plugins(origin_path, package_type)
+    if required_plugin:
+        with ZipFile(archive) as zf:
+            for archive_file in zf.namelist():
+                with zf.open(archive_file) as af:
+                    if af.name == required_plugin[0]:
+                        os.makedirs(REQUIREMENTS_PATH, exist_ok=True)
+                        zf.extract(af.name, REQUIREMENTS_PATH)
 
 
 def copy_to_cwd_requirements(origin_path, package_name: str) -> None:

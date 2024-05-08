@@ -112,3 +112,22 @@ def get_package_resources(directory, package_type: Literal["pulse", "sampctl"]) 
 
     except:
         return None
+
+
+def get_resource_plugins(directory, package_type: Literal["pulse", "sampctl"]) -> list[str] | None:
+    try:
+        with open(os.path.join(directory, "pulse.toml" if package_type == "pulse" else "pawn.json"), mode="rb" if package_type == "pulse" else "r") as f:
+            if package_type == "pulse":
+                resource = tomli.load(f)
+            else:
+                resource = json.load(f)
+
+        if package_type == "pulse":
+            return resource["resource"][system().lower()]["plugins"]
+
+        else:
+            index: int = 0 if resource["resources"][0]["platform"] == system().lower() else 1
+            return resource["resources"][index]["plugins"]
+
+    except:
+        return None
