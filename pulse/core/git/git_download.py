@@ -206,6 +206,7 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                     if af.name == required_plugin[0]:
                         os.makedirs(REQUIREMENTS_PATH, exist_ok=True)
                         zf.extract(af.name, REQUIREMENTS_PATH)
+                        break
 
 
 def copy_to_cwd_requirements(origin_path, package_name: str) -> None:
