@@ -204,8 +204,9 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
             for archive_file in zf.namelist():
                 with zf.open(archive_file) as af:
                     if af.name == required_plugin[0]:
-                        os.makedirs(REQUIREMENTS_PATH, exist_ok=True)
-                        zf.extract(af.name, REQUIREMENTS_PATH)
+                        cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
+                        os.makedirs(cwd_path, exist_ok=True)
+                        zf.extract(af.name, cwd_path)
                         break
 
 

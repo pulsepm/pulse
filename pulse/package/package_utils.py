@@ -16,7 +16,13 @@ def echo_retrieve_fail(package: list, code: int) -> str:
 
 def write_requirements(owner: str, repo: str, sign: str, syntax: str) -> None:
     package_name: str = f"{owner}/{repo}{sign}{syntax}"
-    with open(os.path.join(os.getcwd(), "pulse.toml"), "rb") as file:
+    toml_path = os.path.join(os.getcwd(), "pulse.toml")
+
+    if not os.path.exists(toml_path):
+        tmp_file = open(toml_path, mode="w")
+        tmp_file.close()
+
+    with open(toml_path, "rb") as file:
         data = tomli.load(file)
 
     if "requirements" not in data:
@@ -24,5 +30,5 @@ def write_requirements(owner: str, repo: str, sign: str, syntax: str) -> None:
 
     if package_name not in data["requirements"]["live"]:
         data["requirements"]["live"].append(package_name)
-        with open(os.path.join(os.getcwd(), "pulse.toml"), "wb") as file:
+        with open(toml_path, "wb") as file:
             tomli_w.dump(data, file, multiline_strings=True)
