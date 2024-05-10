@@ -111,7 +111,7 @@ def download_package(
 
     dependencies = git_get.get_requirements(package_dir, package_type)
     if dependencies:
-        print(f"Found for {owner}/{repo} ({package_type})!")
+        print(f"Found dependencies for {owner}/{repo} ({package_type})!")
         download_requirements(dependencies, package_type)
 
     resource = git_get.get_package_resources(package_dir, package_type)

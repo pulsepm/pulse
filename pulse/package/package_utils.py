@@ -2,7 +2,9 @@ import click
 import tomli
 import tomli_w
 import os
-from typing import Literal
+import stat
+from typing import Callable, Literal
+from pulse.core.core_dir import PACKAGE_PATH
 
 
 def get_package_syntax(package: str) -> str | None:
@@ -51,7 +53,6 @@ def get_package_type(git_repo: list | dict) -> Literal["pulse", "sampctl", False
     if isinstance(git_repo, dict):
         git_repo = list(git_repo.values())
 
-    type: str = None
     for file in git_repo:
         try:
             file["path"]
@@ -59,24 +60,32 @@ def get_package_type(git_repo: list | dict) -> Literal["pulse", "sampctl", False
             if isinstance(file, list):
                 for i in file:
                     if "pulse.toml" in i["path"]:
-                        type = "pulse"
-                        break
+                        return "pulse"
 
                     if "pawn.json" in i["path"]:
-                        type = "sampctl"
-                        break
+                        return "sampctl"
 
         else:
             if "pulse.toml" in file["path"]:
-                type = "pulse"
-                break
+                return "pulse"
 
             if "pawn.json" in file["path"]:
-                type = "sampctl"
-                break
+                return "sampctl"
 
-    return type if type else False
+    return False
 
 
-# def get_local_package_type(owner: str, repo: str, version: str) -> Literal["pulse", "sampctl", False]:
-#     with open()
+def get_local_package_type(owner: str, repo: str, version: str) -> Literal["pulse", "sampctl", False]:
+    local_path = os.path.join(PACKAGE_PATH, owner, repo, version)
+    if os.path.exists(os.path.join(local_path, "pulse.toml")):
+        return "pulse"
+
+    if os.path.exists(os.path.join(local_path, "pawn.json")):
+        return "sampctl"
+
+    return False
+
+
+def on_rm_error(function: Callable, path, info):
+    os.chmod(path, stat.S_IWRITE)
+    os.unlink(path)
