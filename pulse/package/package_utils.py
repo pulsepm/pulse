@@ -1,3 +1,4 @@
+import re
 import click
 import tomli
 import tomli_w
@@ -89,3 +90,8 @@ def get_local_package_type(owner: str, repo: str, version: str) -> Literal["puls
 def on_rm_error(function: Callable, path, info):
     os.chmod(path, stat.S_IWRITE)
     os.unlink(path)
+
+
+def get_resource_file(plugin: str) -> str:
+    file = re.search(r'[^\\/]*$', plugin)
+    return file.group(0) if file else plugin
