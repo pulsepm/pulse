@@ -47,12 +47,12 @@ def install(package: str) -> None:
         re_package[0],
         re_package[1],
         re_package[2],
-        package_utils.get_package_type(package),
+        package_utils.get_package_syntax(package),
     )
     if not git_repo:
         return package_utils.echo_retrieve_fail(re_package, branch)
 
-    package_type = is_package(git_repo)
+    package_type = package_utils.get_package_type(git_repo)
     if not package_type:
         return click.echo(
             f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} is not a Pulse / sampctl package!"
@@ -69,40 +69,9 @@ def install(package: str) -> None:
     package_utils.write_requirements(
         re_package[0],
         re_package[1],
-        package_utils.get_package_type(package),
+        package_utils.get_package_syntax(package),
         re_package[2],
     )
     click.echo(
         f"Successfully installed library: {re_package[0]}/{re_package[1]} ({re_package[2]})!"
     )
-
-
-def is_package(git_repo: list | dict) -> Literal["pulse", "sampctl", False]:
-    if isinstance(git_repo, dict):
-        git_repo = list(git_repo.values())
-
-    is_toml: bool = False
-    is_json: bool = False
-    for file in git_repo:
-        try:
-            file["path"]
-        except:
-            if isinstance(file, list):
-                for i in file:
-                    if "pulse.toml" in i["path"]:
-                        is_toml = True
-                        break
-
-                    if "pawn.json" in i["path"]:
-                        is_json = True
-                        break
-        else:
-            if "pulse.toml" in file["path"]:
-                is_toml = True
-                break
-
-            if "pawn.json" in file["path"]:
-                is_json = True
-                break
-
-    return "pulse" if is_toml else "sampctl" if is_json else False
