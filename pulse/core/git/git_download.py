@@ -95,11 +95,16 @@ def download_package(
     if os.path.exists(package_dir):
         shutil.rmtree(package_dir)
 
-    if raw_syntax.find(":"):
+    if ":" in raw_syntax:
         git_repo = Repo.clone_from(
             f"https://github.com/{owner}/{repo}.git", package_dir, single_branch=True
         )
         git_repo.head.reset(commit=version, index=True, working_tree=True)
+
+    if "==" in raw_syntax:
+        git_repo = Repo.clone_from(f"https://github.com/{owner}/{repo}", package_dir)
+        git = git_repo.git
+        git.checkout(version)
 
     else:
         Repo.clone_from(
@@ -149,7 +154,7 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
             re_requirement.append(branch)
 
         pckg_path = os.path.join(
-            PACKAGE_PATH, f"{re_requirement[0]}/{re_requirement[1]}"
+            PACKAGE_PATH, re_requirement[0], re_requirement[1]
         )
         if os.path.exists(pckg_path):
             print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")

@@ -83,7 +83,7 @@ def remove_dependencies(dependencies) -> None:
             dependence.append(branch)
 
         dependence_ppc_path = os.path.join(
-            PACKAGE_PATH, f"{dependence[0]}/{dependence[1]}/{dependence[2]}"
+            PACKAGE_PATH, dependence[0], dependence[1], dependence[2]
         )
         if not os.path.exists(dependence_ppc_path):
             click.echo(

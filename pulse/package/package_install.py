@@ -30,7 +30,7 @@ def install(package: str) -> None:
             "Incorrect entry of the package name.\nExample of command: pulse install Author/Repo"
         )
 
-    package_path = os.path.join(PACKAGE_PATH, f"{re_package[0]}/{re_package[1]}")
+    package_path = os.path.join(PACKAGE_PATH, re_package[0], re_package[1])
     if os.path.exists(package_path):
         return click.echo(f"{re_package[0]}/{re_package[1]}'s already installed!")
 
@@ -55,7 +55,7 @@ def install(package: str) -> None:
     package_type = package_utils.get_package_type(git_repo)
     if not package_type:
         return click.echo(
-            f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} is not a Pulse / sampctl package!"
+            f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} is not Pulse / sampctl package!"
         )
     click.echo(f"Installing: {re_package[0]}/{re_package[1]} ({re_package[2]})..")
     git_download.download_package(
