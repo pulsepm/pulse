@@ -86,34 +86,36 @@ def download_and_unzip_github_release(
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
 
-def download_package(
-    owner: str, repo: str, package_path: str, version: str, package_type: Literal["pulse", "sampctl"], raw_syntax: str
-) -> None:
-    os.makedirs(package_path, exist_ok=True)
-    package_dir = os.path.join(package_path, version)
-
-    if os.path.exists(package_dir):
-        shutil.rmtree(package_dir)
-
+def gitpython_download(owner: str, repo: str, version: str, save_path, raw_syntax: str) -> None:
     if ":" in raw_syntax:
         git_repo = Repo.clone_from(
-            f"https://github.com/{owner}/{repo}.git", package_dir, single_branch=True
+            f"https://github.com/{owner}/{repo}.git", save_path, single_branch=True
         )
         git_repo.head.reset(commit=version, index=True, working_tree=True)
 
     if "==" in raw_syntax:
-        git_repo = Repo.clone_from(f"https://github.com/{owner}/{repo}", package_dir)
+        git_repo = Repo.clone_from(f"https://github.com/{owner}/{repo}", save_path)
         git = git_repo.git
         git.checkout(version)
 
     else:
         Repo.clone_from(
             f"https://github.com/{owner}/{repo}.git",
-            package_dir,
+            save_path,
             single_branch=True,
             branch=version,
         )
 
+
+def download_package(
+    owner: str, repo: str, package_path: str, version: str, package_type: Literal["pulse", "sampctl"], raw_syntax: str
+) -> None:
+    os.makedirs(package_path, exist_ok=True)
+    package_dir = os.path.join(package_path, version)
+    if os.path.exists(package_dir):
+        shutil.rmtree(package_dir)
+
+    gitpython_download(owner, repo, version, package_dir, raw_syntax)
     dependencies = git_get.get_requirements(package_dir, package_type)
     if dependencies:
         print(f"Found dependencies for {owner}/{repo} ({package_type})!")
@@ -161,11 +163,12 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
             continue
 
         pckg_path_version = os.path.join(pckg_path, re_requirement[2])
-        Repo.clone_from(
-            f"https://github.com/{re_requirement[0]}/{re_requirement[1]}.git",
+        gitpython_download(
+            re_requirement[0],
+            re_requirement[1],
+            re_requirement[2],
             pckg_path_version,
-            single_branch=True,
-            branch=re_requirement[2],
+            requirement
         )
         print(
             f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
