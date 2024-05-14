@@ -1,6 +1,7 @@
 import os
 import tarfile
-from zipfile import ZipFile, ZipInfo
+import stat
+from zipfile import ZipFile
 from platform import system
 from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH
 from typing import Literal
@@ -113,7 +114,7 @@ def download_package(
     os.makedirs(package_path, exist_ok=True)
     package_dir = os.path.join(package_path, version)
     if os.path.exists(package_dir):
-        shutil.rmtree(package_dir)
+        shutil.rmtree(package_dir, onerror=package_utils.on_rm_error)
 
     gitpython_download(owner, repo, version, package_dir, raw_syntax)
     dependencies = git_get.get_requirements(package_dir, package_type)
@@ -130,6 +131,7 @@ def download_package(
     if os.path.exists(requirements):
         shutil.rmtree(requirements)
 
+    os.chmod(package_dir, stat.S_IWRITE)
     shutil.copytree(package_dir, requirements, dirs_exist_ok=True)
 
 
@@ -174,7 +176,9 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
             f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
         )
         libs = git_get.get_requirements(pckg_path_version, package_type)
-        copy_to_cwd_requirements(pckg_path_version, re_requirement[1])
+        shutil.copytree(
+            pckg_path_version, os.path.join(REQUIREMENTS_PATH, re_requirement[1]), dirs_exist_ok=True
+        )
         if libs:
             print(
                 f"Installing dependencies for {re_requirement[0]}/{re_requirement[1]}.."
@@ -216,9 +220,3 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                         os.makedirs(cwd_path, exist_ok=True)
                         zf.extract(af.name, cwd_path)
                         break
-
-
-def copy_to_cwd_requirements(origin_path, package_name: str) -> None:
-    return shutil.copytree(
-        origin_path, os.path.join(REQUIREMENTS_PATH, package_name), dirs_exist_ok=True
-    )

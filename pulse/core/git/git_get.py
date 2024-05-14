@@ -67,7 +67,7 @@ def get_github_repo(
     return response.json()
 
 
-def default_branch(package: list) -> str | int:
+def default_branch(package: list[str]) -> str | int:
     url = f"https://api.github.com/repos/{package[0]}/{package[1]}"
     response = requests.get(url)
     if not response.ok:
