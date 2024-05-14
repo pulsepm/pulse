@@ -1,10 +1,11 @@
 import os
 import tarfile
+import stat
 from zipfile import ZipFile
 from platform import system
 from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH
-from io import BytesIO
-from git import RemoteProgress, Repo
+from typing import Literal
+from git import Repo
 
 import re
 import requests
@@ -86,43 +87,57 @@ def download_and_unzip_github_release(
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
 
-def download_package(
-    owner: str, repo: str, package_path: str, version: str, is_commit: bool = False
-) -> None:
-    os.makedirs(package_path, exist_ok=True)
-    package_dir = os.path.join(package_path, version)
-
-    if os.path.exists(package_dir):
-        shutil.rmtree(package_dir)
-
-    if not is_commit:
-        Repo.clone_from(
-            f"https://github.com/{owner}/{repo}.git",
-            package_dir,
-            single_branch=True,
-            branch=version,
-        )
-    else:
+def gitpython_download(owner: str, repo: str, version: str, save_path, raw_syntax: str) -> None:
+    if ":" in raw_syntax:
         git_repo = Repo.clone_from(
-            f"https://github.com/{owner}/{repo}.git", package_dir, single_branch=True
+            f"https://github.com/{owner}/{repo}.git", save_path, single_branch=True
         )
         git_repo.head.reset(commit=version, index=True, working_tree=True)
 
-    package_dir = copy_if_plugin(owner, repo, package_dir)
-    dependencies = git_get.get_requirements(package_dir)
+    if "==" in raw_syntax:
+        git_repo = Repo.clone_from(f"https://github.com/{owner}/{repo}", save_path)
+        git = git_repo.git
+        git.checkout(version)
+
+    else:
+        Repo.clone_from(
+            f"https://github.com/{owner}/{repo}.git",
+            save_path,
+            single_branch=True,
+            branch=version,
+        )
+
+
+def download_package(
+    owner: str, repo: str, package_path: str, version: str, package_type: Literal["pulse", "sampctl"], raw_syntax: str
+) -> None:
+    os.makedirs(package_path, exist_ok=True)
+    package_dir = os.path.join(package_path, version)
+    if os.path.exists(package_dir):
+        shutil.rmtree(package_dir, onerror=package_utils.on_rm_error)
+
+    gitpython_download(owner, repo, version, package_dir, raw_syntax)
+    dependencies = git_get.get_requirements(package_dir, package_type)
     if dependencies:
-        print(f"Found dependencies for {owner}/{repo}!")
-        download_requirements(dependencies)
+        print(f"Found dependencies for {owner}/{repo} ({package_type})!")
+        download_requirements(dependencies, package_type)
+
+    resource = git_get.get_package_resources(package_dir, package_type)
+    if resource:
+        print(f"Found resource for {owner}/{repo} ({package_type})!")
+        download_resource(package_dir, resource, package_type)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
     if os.path.exists(requirements):
         shutil.rmtree(requirements)
+
+    os.chmod(package_dir, stat.S_IWRITE)
     shutil.copytree(package_dir, requirements, dirs_exist_ok=True)
 
 
-def download_requirements(requirements: list) -> None:
+def download_requirements(requirements: list, package_type: Literal["sampctl", "pulse"]) -> None:
     """
-    Download requirements from pulse package
+    Download requirements from pulse.toml or pawn.json
     """
     for requirement in requirements:
         re_requirement = re.split("/|@|==|:", requirement)
@@ -143,61 +158,65 @@ def download_requirements(requirements: list) -> None:
             re_requirement.append(branch)
 
         pckg_path = os.path.join(
-            PACKAGE_PATH, f"{re_requirement[0]}/{re_requirement[1]}"
+            PACKAGE_PATH, re_requirement[0], re_requirement[1]
         )
         if os.path.exists(pckg_path):
             print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
             continue
 
         pckg_path_version = os.path.join(pckg_path, re_requirement[2])
-        Repo.clone_from(
-            f"https://github.com/{re_requirement[0]}/{re_requirement[1]}.git",
+        gitpython_download(
+            re_requirement[0],
+            re_requirement[1],
+            re_requirement[2],
             pckg_path_version,
-            single_branch=True,
-            branch=re_requirement[2],
-            progress=RemoteProgress(),
+            requirement
         )
         print(
             f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
         )
-        pckg_path_version = copy_if_plugin(
-            re_requirement[0], re_requirement[1], pckg_path_version
+        libs = git_get.get_requirements(pckg_path_version, package_type)
+        shutil.copytree(
+            pckg_path_version, os.path.join(REQUIREMENTS_PATH, re_requirement[1]), dirs_exist_ok=True
         )
-        libs = git_get.get_requirements(pckg_path_version)
-        copy_to_cwd_requirements(pckg_path_version, re_requirement[1])
         if libs:
             print(
-                f"Found dependencies for {re_requirement[0]}/{re_requirement[1]}!\nInstalling.."
+                f"Installing dependencies for {re_requirement[0]}/{re_requirement[1]}.."
             )
-            download_requirements(libs)
+            download_requirements(libs, package_type)
+
+        resource = git_get.get_package_resources(pckg_path_version, package_type)
+        if resource:
+            print(f"Found resource for {re_requirement[0]}/{re_requirement[1]} ({package_type})!")
+            download_resource(pckg_path_version, resource, package_type)
 
 
-def copy_if_plugin(owner: str, repo: str, directory):
-    for f_name in os.listdir(directory):
-        if f_name.endswith(("dll", "so")):
-            if (
-                system() == "Windows"
-                and f_name.endswith("so")
-                or system() == "Linux"
-                and f_name.endswith("dll")
-            ):
-                os.remove(os.path.join(directory, f_name))
-                continue
+def download_resource(origin_path, resource: tuple[str], package_type: Literal["sampctl", "pulse"]) -> None:
+    owner, repo, release = resource
+    path = os.path.join(PLUGINS_PATH, owner, repo)
+    os.makedirs(path)
 
-            print(f"Found plugin: {f_name} in {directory}!")
-            tmp_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
-            tmp_reqirements = os.path.join(REQUIREMENTS_PATH, "plugins")
-            os.makedirs(tmp_reqirements, exist_ok=True)
-            os.makedirs(tmp_dir, exist_ok=True)
-            shutil.copy2(os.path.join(directory, f_name), tmp_dir)
-            shutil.copy2(os.path.join(directory, f_name), tmp_reqirements)
-            os.remove(os.path.join(directory, f_name))
-            continue
+    request = requests.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest")
+    response = request.json()
+    assets = response["assets"]
+    for asset in assets:
+        if re.match(release, asset["name"]):
+            download_url = asset["browser_download_url"]
+            r = requests.get(download_url)
+            archive = os.path.join(path, asset["name"])
+            with open(archive, "wb") as f:
+                f.write(r.content)
 
-    return directory
-
-
-def copy_to_cwd_requirements(origin_path, package_name: str) -> None:
-    return shutil.copytree(
-        origin_path, os.path.join(REQUIREMENTS_PATH, package_name), dirs_exist_ok=True
+    print(
+        f"Installed resource: {asset['name']} in {path}"
     )
+    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
+    if required_plugin:
+        with ZipFile(archive) as zf:
+            for archive_file in zf.namelist():
+                with zf.open(archive_file) as af:
+                    if re.match(required_plugin[0], af.name):
+                        cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
+                        os.makedirs(cwd_path, exist_ok=True)
+                        zf.extract(af.name, cwd_path)
+                        break
