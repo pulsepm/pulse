@@ -1,0 +1,1 @@
+STDLIB_NAME: str = "omp-stdlib"
