@@ -6,12 +6,14 @@ from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH
 import pulse.package.package_utils as package_utils
 import pulse.core.git.git_get as git_get
 import shutil
+STDLIB_NAME: str = "omp-stdlib"
 
 
 @click.command
 @click.argument("package")
 @click.option("-r", "--recursive", is_flag=True, default=False)
-def uninstall(package: str, recursive: bool) -> None:
+@click.option("-f", "--force", is_flag=True, default=False)
+def uninstall(package: str, recursive: bool, force: bool) -> None:
     """
     Uninstall pulse package.
     """
@@ -40,6 +42,9 @@ def uninstall(package: str, recursive: bool) -> None:
     )
     if not os.path.exists(package_path):
         return click.echo(f"Package {package} was not found.")
+
+    if re_package[1] == STDLIB_NAME and not force:
+        return click.echo(f"Unable to remove {STDLIB_NAME}, use the -f (--force) flag to remove the package")
 
     package_type = package_utils.get_local_package_type(re_package[0], re_package[1], re_package[2])
     if recursive:
