@@ -2,8 +2,9 @@ import requests
 from typing import Literal
 import os
 import tomli
-import logging
-import pulse.stroke.stroke as stroke
+import json
+import pulse.package.package_utils as package_utils
+from platform import system
 
 
 def get_github_compiler_releases() -> list:
@@ -17,8 +18,7 @@ def get_github_compiler_releases() -> list:
         response = requests.get("https://api.github.com/repos/pulsepm/compiler/tags")
 
     except Exception as e:
-        logging.fatal(f"Failed to get compiler releases: {e}" )
-        stroke.dump(4)
+        print(f"An unexpected error occurred: {e}")
 
     else:
         return response.json()
@@ -26,10 +26,10 @@ def get_github_compiler_releases() -> list:
 
 def get_github_runtime_releases() -> list:
     """
-    Retrieves a list of runtime releases from a GitHub repository.
+    Retrieves a list of compiler releases from a GitHub repository.
 
     Returns:
-        list: A list of runtime releases available in the GitHub repository.
+        list: A list of compiler releases available in the GitHub repository.
     """
 
     try:
@@ -38,8 +38,7 @@ def get_github_runtime_releases() -> list:
         )
 
     except Exception as e:
-        logging.fatal(f"Failed to get runtime releases: {e}" )
-        stroke.dump(4)
+        print(f"An unexpected error occurred: {e}")
 
     else:
         return response.json()
