@@ -3,6 +3,7 @@ import os
 import click
 import re
 from pulse.core.core_dir import PACKAGE_PATH
+from typing import Literal
 import git
 import pulse.core.git.git_download as git_download
 import pulse.core.git.git_get as git_get
@@ -29,7 +30,7 @@ def install(package: str) -> None:
             "Incorrect entry of the package name.\nExample of command: pulse install Author/Repo"
         )
 
-    package_path = os.path.join(PACKAGE_PATH, f"{re_package[0]}/{re_package[1]}")
+    package_path = os.path.join(PACKAGE_PATH, re_package[0], re_package[1])
     if os.path.exists(package_path):
         return click.echo(f"{re_package[0]}/{re_package[1]}'s already installed!")
 
@@ -46,51 +47,31 @@ def install(package: str) -> None:
         re_package[0],
         re_package[1],
         re_package[2],
-        package_utils.get_package_type(package),
+        package_utils.get_package_syntax(package),
     )
     if not git_repo:
         return package_utils.echo_retrieve_fail(re_package, branch)
 
-    if not is_toml_package(git_repo):
+    package_type = package_utils.get_package_type(git_repo)
+    if not package_type:
         return click.echo(
-            f"Couldn't find pulse.toml!\n{re_package[0]}/{re_package[1]} is not a Pulse package!"
+            f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} is not Pulse / sampctl package!"
         )
     click.echo(f"Installing: {re_package[0]}/{re_package[1]} ({re_package[2]})..")
     git_download.download_package(
         re_package[0],
         re_package[1],
         package_path,
-        version=re_package[2],
-        is_commit=True if ":" in package else False,
+        re_package[2],
+        package_type,
+        package
     )
     package_utils.write_requirements(
         re_package[0],
         re_package[1],
-        package_utils.get_package_type(package),
+        package_utils.get_package_syntax(package),
         re_package[2],
     )
     click.echo(
-        f"Successfully installed the library: {re_package[0]}/{re_package[1]} ({re_package[2]})!"
+        f"Successfully installed library: {re_package[0]}/{re_package[1]} ({re_package[2]})!"
     )
-
-
-def is_toml_package(git_repo: list | dict) -> bool:
-    if isinstance(git_repo, dict):
-        git_repo = list(git_repo.values())
-
-    is_toml: bool = False
-    for file in git_repo:
-        try:
-            file["path"]
-        except:
-            if isinstance(file, list):
-                for i in file:
-                    if "pulse.toml" in i["path"]:
-                        is_toml = True
-                        break
-        else:
-            if "pulse.toml" in file["path"]:
-                is_toml = True
-                break
-
-    return is_toml
