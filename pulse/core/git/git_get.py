@@ -46,13 +46,13 @@ def get_github_runtime_releases() -> list:
 
 
 def get_github_repo(
-    author: str, repo: str, syntax: str, syntax_type: Literal["@", ":", "=="]
+    author: str, repo: str, syntax: str, syntax_type: Literal["@", ":", "#"]
 ) -> list | bool:
     if syntax_type == "@" or syntax_type == "#":
         url = f"https://api.github.com/repos/{author}/{repo}/git/trees/{syntax}"
 
     if syntax_type == ":":
-        url = f"https://api.github.com/repos/{author}/{repo}/git/refs/tags/{syntax}"
+        url = f"https://api.github.com/repos/{author}/{repo}/contents?ref={syntax}"
 
     if not syntax_type:
         url = f"https://api.github.com/repos/{author}/{repo}/contents"
@@ -60,10 +60,6 @@ def get_github_repo(
     response = requests.get(url)
     if not response.ok:
         return response
-
-    if syntax_type == ":":
-        tag_response: str = response.json()["object"]["sha"]
-        response = requests.get(f"https://api.github.com/repos/{author}/{repo}/git/trees/{tag_response}")
 
     return response.json()
 
