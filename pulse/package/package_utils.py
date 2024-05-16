@@ -9,7 +9,7 @@ from pulse.core.core_dir import PACKAGE_PATH
 
 
 def get_package_syntax(package: str) -> str | None:
-    return "==" if "==" in package else ":" if ":" in package else "@"
+    return "#" if "#" in package else ":" if ":" in package else "@"
 
 
 def echo_retrieve_fail(package: list, code: int) -> str:

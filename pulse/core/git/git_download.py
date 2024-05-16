@@ -88,13 +88,13 @@ def download_and_unzip_github_release(
 
 
 def gitpython_download(owner: str, repo: str, version: str, save_path, raw_syntax: str) -> None:
-    if ":" in raw_syntax:
+    if "#" in raw_syntax:
         git_repo = Repo.clone_from(
             f"https://github.com/{owner}/{repo}.git", save_path, single_branch=True
         )
         git_repo.head.reset(commit=version, index=True, working_tree=True)
 
-    if "==" in raw_syntax:
+    if ":" in raw_syntax:
         git_repo = Repo.clone_from(f"https://github.com/{owner}/{repo}", save_path)
         git = git_repo.git
         git.checkout(version)
@@ -139,7 +139,7 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
     Download requirements from pulse.toml or pawn.json
     """
     for requirement in requirements:
-        re_requirement = re.split("/|@|==|:", requirement)
+        re_requirement = re.split("/|@|:|#", requirement)
         try:
             re_requirement[1]
         except:

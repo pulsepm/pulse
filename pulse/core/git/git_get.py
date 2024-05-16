@@ -5,6 +5,7 @@ import tomli
 import json
 import pulse.package.package_utils as package_utils
 from platform import system
+import re
 
 
 def get_github_compiler_releases() -> list:
@@ -45,24 +46,24 @@ def get_github_runtime_releases() -> list:
 
 
 def get_github_repo(
-    author: str, repo: str, syntax: str, type: Literal["@", ":", "=="]
+    author: str, repo: str, syntax: str, syntax_type: Literal["@", ":", "=="]
 ) -> list | bool:
-    if type == "@" or type == ":":
+    if syntax_type == "@" or syntax_type == "#":
         url = f"https://api.github.com/repos/{author}/{repo}/git/trees/{syntax}"
 
-    if type == "==":
+    if syntax_type == ":":
         url = f"https://api.github.com/repos/{author}/{repo}/git/refs/tags/{syntax}"
 
-    if not type:
+    if not syntax_type:
         url = f"https://api.github.com/repos/{author}/{repo}/contents"
 
     response = requests.get(url)
     if not response.ok:
-        return False
+        return response
 
-    if type == "==":
-        tmp_ = response.json()
-        return get_github_repo(author, repo, tmp_["object"]["sha"], ":")
+    if syntax_type == ":":
+        tag_response: str = response.json()["object"]["sha"]
+        response = requests.get(f"https://api.github.com/repos/{author}/{repo}/git/trees/{tag_response}")
 
     return response.json()
 

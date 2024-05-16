@@ -30,7 +30,7 @@ def ensure_packages() -> None:
 
     click.echo(f'Found: {len(requirements)} requirements..')
     for requirement in requirements:
-        re_package = re.split("/|@|==|:", requirement)
+        re_package = re.split("/|@|:|#", requirement)
         try:
             re_package[2]
         except:
@@ -95,7 +95,7 @@ def ensure_packages() -> None:
 
 def ensure_dependencies(dependencies: list[str]) -> None:
     for raw_dependency in dependencies:
-        dependency = re.split("/|@|==|:", raw_dependency)
+        dependency = re.split("/|@|:|#", raw_dependency)
         try:
             dependency[2]
         except:
