@@ -3,6 +3,7 @@ from .stroke_dump import dump
 
 @click.command
 @click.argument('code', type=int)
-def stroke(code: int) -> None:
+@click.argument('meta', type=str, required=False)
+def stroke(code: int, meta: str = None) -> None:
     # check for code
-    dump(int(code))
+    dump(code)

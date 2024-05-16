@@ -12,6 +12,8 @@ import requests
 import pulse.core.git.git_get as git_get
 import pulse.package.package_utils as package_utils
 import shutil
+import logging
+import pulse.stroke.stroke as stroke
 
 
 def download_and_unzip_github_release(
@@ -34,10 +36,9 @@ def download_and_unzip_github_release(
     api_url = f"https://api.github.com/repos/{owner}/{repo}/releases/tags/{tag}"
     response = requests.get(api_url)
 
-    if response.status_code != 200:
-        print(
-            f"Failed to get release information. HTTP Status Code: {response.status_code}"
-        )
+    if response.ok:
+        logging.fatal(f"Failed to get release information. HTTP Status Code: {response.status_code}")
+        stroke.dump(6)
         return
 
     release_info = response.json()
@@ -50,18 +51,20 @@ def download_and_unzip_github_release(
             break
 
     if asset_url is None:
-        print(f"Asset '{asset_name}' not found in the release.")
+        logging.fatal(f"Asset '{asset_name}' not found in the release.")
+        stroke.dump(3)
         return
 
     # Download the asset
     try:
         response = requests.get(asset_url, allow_redirects=True)
     except requests.exceptions.RequestException as e:
-        print(f"Failed to connect to the server: {e}")
+        logging.fatal(f"Failed to connect to the server: {e}")
+        stroke.dump(5)
         return
 
     if response.status_code == 200:
-        print("Asset download successful")
+        logging.debug("Asset downloading started..")
         os.makedirs(target_folder, exist_ok=True)
         asset_path = os.path.join(target_folder, asset_name)
 
@@ -76,30 +79,26 @@ def download_and_unzip_github_release(
             with tarfile.open(asset_path, "r:gz") as tar_ref:
                 tar_ref.extractall(target_folder)
         else:
-            print(f"Unsupported asset type: {asset_name}")
+            logging.fatal(f"Unsupported asset type: {asset_name}")
+            stroke.dump(3)
             return
 
         # Remove the downloaded asset file if needed
         os.remove(asset_path)
-        print(f"Asset downloaded and extracted to: {target_folder}")
+        logging.info(f"Asset downloaded and extracted to: {target_folder}")
 
     else:
-        print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
+        logging.fatal(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
+        stroke.dump(6)
 
 
-def gitpython_download(owner: str, repo: str, version: str, save_path, raw_syntax: str) -> None:
-    if ":" in raw_syntax:
-        git_repo = Repo.clone_from(
-            f"https://github.com/{owner}/{repo}.git", save_path, single_branch=True
-        )
-        git_repo.head.reset(commit=version, index=True, working_tree=True)
-
-    if "==" in raw_syntax:
-        git_repo = Repo.clone_from(f"https://github.com/{owner}/{repo}", save_path)
-        git = git_repo.git
-        git.checkout(version)
-
-    else:
+def download_package(
+    owner: str, repo: str, package_path: str, version: str, is_commit: bool = False
+) -> None:
+    logging.debug(f"Cloning repository ({owner}/{repo})..")
+    os.makedirs(package_path, exist_ok=True)
+    package_dir = os.path.join(package_path, version)
+    if not is_commit:
         Repo.clone_from(
             f"https://github.com/{owner}/{repo}.git",
             save_path,
@@ -119,13 +118,8 @@ def download_package(
     gitpython_download(owner, repo, version, package_dir, raw_syntax)
     dependencies = git_get.get_requirements(package_dir, package_type)
     if dependencies:
-        print(f"Found dependencies for {owner}/{repo} ({package_type})!")
-        download_requirements(dependencies, package_type)
-
-    resource = git_get.get_package_resources(package_dir, package_type)
-    if resource:
-        print(f"Found resource for {owner}/{repo} ({package_type})!")
-        download_resource(package_dir, resource, package_type)
+        logging.info(f"Found dependencies for {owner}/{repo}!")
+        download_requirements(dependencies)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
     if os.path.exists(requirements):
@@ -143,7 +137,7 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
         try:
             re_requirement[1]
         except:
-            print("Found incorrect package name.")
+            logging.warning("Found incorrect package name.")
             continue
 
         try:
@@ -160,18 +154,17 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
             PACKAGE_PATH, re_requirement[0], re_requirement[1]
         )
         if os.path.exists(pckg_path):
-            print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
+            logging.info(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
             continue
 
         pckg_path_version = os.path.join(pckg_path, re_requirement[2])
-        gitpython_download(
-            re_requirement[0],
-            re_requirement[1],
-            re_requirement[2],
+        logging.debug(f"Cloning repository as dependency ({re_requirement[0]}/{re_requirement[1]})..")
+        Repo.clone_from(
+            f"https://github.com/{re_requirement[0]}/{re_requirement[1]}.git",
             pckg_path_version,
             requirement
         )
-        print(
+        logging.info(
             f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
         )
         libs = git_get.get_requirements(pckg_path_version, package_type)
@@ -183,43 +176,38 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
             pckg_path_version, os.path.join(REQUIREMENTS_PATH, re_requirement[1])
         )
         if libs:
-            print(
-                f"Installing dependencies for {re_requirement[0]}/{re_requirement[1]}.."
+            logging.info(
+                f"Found dependencies for {re_requirement[0]}/{re_requirement[1]}!\nInstalling.."
             )
-            download_requirements(libs, package_type)
-
-        resource = git_get.get_package_resources(pckg_path_version, package_type)
-        if resource:
-            print(f"Found resource for {re_requirement[0]}/{re_requirement[1]} ({package_type})!")
-            download_resource(pckg_path_version, resource, package_type)
+            download_requirements(libs)
 
 
-def download_resource(origin_path, resource: tuple[str], package_type: Literal["sampctl", "pulse"]) -> None:
-    owner, repo, release = resource
-    path = os.path.join(PLUGINS_PATH, owner, repo)
-    os.makedirs(path)
+def copy_if_plugin(owner: str, repo: str, directory):
+    for f_name in os.listdir(directory):
+        if f_name.endswith(("dll", "so")):
+            if (
+                system() == "Windows"
+                and f_name.endswith("so")
+                or system() == "Linux"
+                and f_name.endswith("dll")
+            ):
+                os.remove(os.path.join(directory, f_name))
+                continue
 
-    request = requests.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest")
-    response = request.json()
-    assets = response["assets"]
-    for asset in assets:
-        if re.match(release, asset["name"]):
-            download_url = asset["browser_download_url"]
-            r = requests.get(download_url)
-            archive = os.path.join(path, asset["name"])
-            with open(archive, "wb") as f:
-                f.write(r.content)
+            logging.info(f"Found plugin: {f_name} in {directory}!")
+            tmp_dir = os.path.join(PLUGINS_PATH, f"{owner}/{repo}")
+            tmp_reqirements = os.path.join(REQUIREMENTS_PATH, "plugins")
+            os.makedirs(tmp_reqirements, exist_ok=True)
+            os.makedirs(tmp_dir, exist_ok=True)
+            shutil.copy2(os.path.join(directory, f_name), tmp_dir)
+            shutil.copy2(os.path.join(directory, f_name), tmp_reqirements)
+            os.remove(os.path.join(directory, f_name))
+            continue
 
-    print(
-        f"Installed resource: {asset['name']} in {path}"
+    return directory
+
+
+def copy_to_cwd_requirements(origin_path, package_name: str) -> None:
+    return shutil.copytree(
+        origin_path, os.path.join(REQUIREMENTS_PATH, package_name), dirs_exist_ok=True
     )
-    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
-    if required_plugin:
-        with ZipFile(archive) as zf:
-            for archive_file in zf.namelist():
-                with zf.open(archive_file) as af:
-                    if re.match(required_plugin[0], af.name):
-                        cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
-                        os.makedirs(cwd_path, exist_ok=True)
-                        zf.extract(af.name, cwd_path)
-                        break
