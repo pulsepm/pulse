@@ -96,6 +96,20 @@ def ensure_packages() -> None:
 def ensure_dependencies(dependencies: list[str]) -> None:
     for raw_dependency in dependencies:
         dependency = re.split("/|@|==|:", raw_dependency)
+        try:
+            dependency[2]
+        except:
+            click.echo(
+                f"No tag, commit, or branch was specified in the requirements for {dependency[0]}/{dependency[1]}. The default branch name will be used!"
+            )
+
+            branch = git_get.default_branch(dependency)
+            if not branch:
+                click.echo("Found incorrect package name.")
+                continue
+
+            dependency.append(branch)
+
         default_path = os.path.join(PACKAGE_PATH, dependency[0], dependency[1], dependency[2])
         dependency_path = os.path.join(REQUIREMENTS_PATH, dependency[1])
         if os.path.exists(dependency_path):
@@ -103,20 +117,6 @@ def ensure_dependencies(dependencies: list[str]) -> None:
             continue
 
         if not is_package_installed(dependency[0], dependency[1], dependency[2]):
-            try:
-                dependency[2]
-            except:
-                click.echo(
-                    f"No tag, commit, or branch was specified in the requirements for {dependency[0]}/{dependency[1]}. The default branch name will be used!"
-                )
-
-                branch = git_get.default_branch(dependency)
-                if not branch:
-                    click.echo("Found incorrect package name.")
-                    continue
-
-                dependency.append(branch)
-
             git_repo = git_get.get_github_repo(
                 dependency[0],
                 dependency[1],

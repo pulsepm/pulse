@@ -131,7 +131,6 @@ def download_package(
     if os.path.exists(requirements):
         shutil.rmtree(requirements)
 
-    os.chmod(package_dir, stat.S_IWRITE)
     shutil.copytree(package_dir, requirements, dirs_exist_ok=True)
 
 
