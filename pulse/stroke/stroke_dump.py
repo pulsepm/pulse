@@ -6,7 +6,7 @@ import pulse.config.config_load as config
 from .stroke_codes import stroke_errors
 from pulse.core.core_dir import STROKE_PATH
 
-def dump(code: int) -> None:
+def dump(code: int, meta: str = None) -> None:
     if not code in stroke_errors:
         return
 
@@ -25,7 +25,8 @@ def dump(code: int) -> None:
     error_node = {
         "event_timestamp": timedate_file,
         "code": code,
-        "message": stroke_errors[code].problem
+        "message": stroke_errors[code].problem,
+        "meta": meta
     }
     fix_node = {
         "description": stroke_errors[code].fix,
