@@ -129,10 +129,9 @@ def download_package(
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
     if os.path.exists(requirements):
-        shutil.rmtree(requirements)
+        shutil.rmtree(requirements, onerror=package_utils.on_rm_error)
 
-    os.chmod(package_dir, stat.S_IWRITE)
-    shutil.copytree(package_dir, requirements, dirs_exist_ok=True)
+    shutil.copytree(package_dir, requirements)
 
 
 def download_requirements(requirements: list, package_type: Literal["sampctl", "pulse"]) -> None:
@@ -176,8 +175,12 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
             f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
         )
         libs = git_get.get_requirements(pckg_path_version, package_type)
+        save_path = os.path.join(REQUIREMENTS_PATH, re_requirement[1])
+        if os.path.exists(save_path):
+            shutil.rmtree(save_path, onerror=package_utils.on_rm_error)
+
         shutil.copytree(
-            pckg_path_version, os.path.join(REQUIREMENTS_PATH, re_requirement[1]), dirs_exist_ok=True
+            pckg_path_version, os.path.join(REQUIREMENTS_PATH, re_requirement[1])
         )
         if libs:
             print(
