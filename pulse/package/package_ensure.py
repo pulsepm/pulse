@@ -58,9 +58,10 @@ def ensure_packages() -> None:
 
             package_type = package_utils.get_package_type(git_repo)
             if not package_type:
-                return click.echo(
+                click.echo(
                     f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} is not Pulse / sampctl package!"
                 )
+                continue
 
             click.echo(f"Installing: {re_package[0]}/{re_package[1]} ({re_package[2]})..")
             git_download.download_package(
@@ -128,9 +129,10 @@ def ensure_dependencies(dependencies: list[str]) -> None:
 
             package_type = package_utils.get_package_type(git_repo)
             if not package_type:
-                return click.echo(
+                click.echo(
                     f"Couldn't find pulse.toml or pawn.json!\n{dependency[0]}/{dependency[1]} is not Pulse / sampctl package!"
                 )
+                continue
 
             click.echo(f"Installing: {dependency[0]}/{dependency[1]} ({dependency[2]})..")
             git_download.download_package(
