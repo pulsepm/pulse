@@ -17,7 +17,7 @@ def uninstall(package: str, recursive: bool, force: bool) -> None:
     """
     Uninstall pulse package.
     """
-    re_package = re.split("/|@|==|:", package)
+    re_package = re.split("/|@|:|#", package)
     if len(re_package) > 3:
         return click.echo("Using many options are not supported!")
 
@@ -71,7 +71,7 @@ def uninstall(package: str, recursive: bool, force: bool) -> None:
 
 def remove_dependencies(dependencies) -> None:
     for dependence in dependencies:
-        dependence = re.split("/|@|==|:", dependence)
+        dependence = re.split("/|@|:|#", dependence)
         try:
             dependence[1]
         except:

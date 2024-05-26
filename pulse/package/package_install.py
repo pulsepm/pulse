@@ -18,7 +18,7 @@ def install(package: str) -> None:
     """
 
     re_package = re.split(
-        "/|@|==|:", package
+        "/|@|:|#", package
     )  # ['Ykpauneu', 'pmtest' 'main / 1.0.0 / 7d3rfe']
     if len(re_package) > 3:
         return click.echo("Using many options are not supported!")
@@ -50,7 +50,7 @@ def install(package: str) -> None:
         package_utils.get_package_syntax(package),
     )
     if not git_repo:
-        return package_utils.echo_retrieve_fail(re_package, branch)
+        return package_utils.echo_retrieve_fail(re_package, git_repo)
 
     package_type = package_utils.get_package_type(git_repo)
     if not package_type:

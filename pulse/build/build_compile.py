@@ -8,7 +8,7 @@ import re
 from pulse.core.core_dir import COMPILER_PATH
 
 def compile(entry, output, version, options: list, modules: list, legacy: list, requirements: dict):
-    
+
     # let's just assume this is our scheme, correct this
     version_path_exe = os.path.join(COMPILER_PATH, version, "pawncc.exe" if platform.system() == "Windows" else "pawncc")
     version_path_lib = os.path.join(COMPILER_PATH, version, "pawnc.dll" if platform.system() == "Windows" else "libpawnc.so")
@@ -45,9 +45,9 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
         print(requirements)
         for key, items in requirements.items():
             print(f"items: {items}")
-            
+
             for item in items:
-                requirement = re.split(r'/|@|==|:', str(item))[1].split('/')[0]
+                requirement = re.split(r'/|@|:|#', str(item))[1].split('/')[0]
                 print(f"requirement: {requirement}")
 
             # append them
@@ -56,10 +56,9 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
                     print(f"OPTIONS: {options}")
 
 
-
     print(f"Here goes options: {options}")
     # now everything is fine, let's fire building with the options
-    #create a path 
+    # create a path
     directory, file = os.path.split(output)
     if not directory == "":
         os.makedirs(directory, exist_ok=True)
@@ -67,5 +66,5 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
     pawncc = [version_path_exe] + options + [entry]
     env = os.environ.copy()
     env["LD_LIBRARY_PATH"] = os.path.join(COMPILER_PATH, version)
-    
+
     subprocess.run(pawncc, env=env)
