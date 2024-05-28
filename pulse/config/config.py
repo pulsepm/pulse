@@ -8,13 +8,30 @@ import tomli_w
 
 import pulse.config.config_choices as config
 from pulse.core.core_dir import CONFIG_PATH
-from .config_load import load, toml_data
-
 import logging
-import pulse.logs.logs
 
 
+toml_data = {}
 
+def create() -> None:
+    """
+    Create a new Pulse configuration file with user input.
+
+    Prompts the user for GitHub username and access token.
+    Writes the user input to the configuration file.
+
+    Returns:
+        None
+    """
+    logging.warning("Configuration file doesn't exist. Let's create a new one.")
+    git_name = click.prompt("Your GitHub username", type=str)
+    git_token = click.prompt("Your GitHub access token (https://github.com/settings/personal-access-tokens/new)", type=str)
+    data = {"last_username": git_name, "user": git_name, "token": git_token}
+    logging.debug("File data created.")
+
+    write(data, "wb")
+
+    
 def exists() -> bool:
     """
     Check if the Pulse configuration file exists.
@@ -126,23 +143,33 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
     else:
         logging.error("Bravo, great! You've choosen invalid option")
 
-
-def create() -> None:
+def load() -> dict:
     """
-    Create a new Pulse configuration file with user input.
-
-    Prompts the user for GitHub username and access token.
-    Writes the user input to the configuration file.
+    Load data from the Pulse configuration file.
 
     Returns:
-        None
+        dict: Dictionary containing configuration data.
+
+    Raises:
+        tomli.TOMLDecodeError: If there's an error decoding TOML\
+        data from the file.
     """
-    logging.warning("Configuration file doesn't exist. Let's create a new one.")
-    git_name = click.prompt("Your GitHub username", type=str)
-    git_token = click.prompt("Your GitHub access token (https://github.com/settings/personal-access-tokens/new)", type=str)
-    data = {"last_username": git_name, "user": git_name, "token": git_token}
-    logging.debug("File data created.")
+    global toml_data
+    full_path = os.path.join(CONFIG_PATH, "pulseconfig.toml")
 
-    write(data, "wb")
+    print("DEBUG: Loading the configuration file...")
+    try:
+        with open(full_path, "rb") as file:
+            toml_data = tomli.load(file)
+            print("INFO: Configuration has been loaded.")
 
+    except FileNotFoundError:
+        create()
+
+    except tomli.TOMLDecodeError as e:
+        print(f"STROKE: Fatal error occurred. Exit code: 2")
+        stroke.dump(2, e)
+        
+
+    return toml_data
 
