@@ -1,6 +1,8 @@
 import tomli
 import os
 import pulse.stroke.stroke as stroke
+
+from .config import create
 from pulse.core.core_dir import CONFIG_PATH
 
 toml_data = {}
@@ -25,9 +27,12 @@ def load() -> dict:
             toml_data = tomli.load(file)
             print("INFO: Configuration has been loaded.")
 
+    except FileNotFoundError:
+        create()
+
     except tomli.TOMLDecodeError as e:
         print(f"STROKE: Fatal error occurred. Exit code: 2")
-        stroke.dump(2)
+        stroke.dump(2, e)
         
 
     return toml_data
