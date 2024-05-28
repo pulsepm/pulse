@@ -40,6 +40,16 @@ def create_repository(username: str, repository_name: str, access_token: str) ->
     Returns:
         None
     """
+
+    # STROKE THIS!!!
+    if not valid_username(username=username):
+        print("Not valid username")
+        return
+
+    if not valid_token(token=access_token):
+        print("Not valid token")
+        return
+
     try:
         create_repo_url = "https://api.github.com/user/repos"
         headers = {"Authorization": f"token {access_token}"}
@@ -58,3 +68,27 @@ def create_repository(username: str, repository_name: str, access_token: str) ->
             )
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
+
+def valid_token(token: str) -> bool:
+    url = "https://api.github.com/user"
+    headers = {"Authorization": f"token {token}"}
+    
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        return True
+    else:
+        return False
+
+
+def valid_username(username: str) -> bool:
+    url = f"https://api.github.com/users/{username}"
+    
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        return True
+    elif response.status_code == 404:
+        return False
+    
