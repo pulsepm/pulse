@@ -1,7 +1,7 @@
 import json
 import os
 import datetime
-import pulse.config.config_load as config
+import pulse.config.config as config
 
 from .stroke_codes import stroke_errors
 from pulse.core.core_dir import STROKE_PATH

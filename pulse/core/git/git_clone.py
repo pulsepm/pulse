@@ -5,7 +5,6 @@ import subprocess
 import git
 
 import logging
-import pulse.logs.logs
 import pulse.stroke.stroke as stroke
 
 from pulse.core.core_url import Url
