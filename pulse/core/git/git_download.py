@@ -231,7 +231,6 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
     if system() == "Linux":
         with tarfile.open(archive, "r:gz") as tf:
             for archive_file in tf.getnames():
-                print(archive_file)
                 if re.match(required_plugin[0], archive_file):
                     tf.extract(archive_file, cwd_path)
                     break
