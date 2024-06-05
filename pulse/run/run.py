@@ -35,12 +35,18 @@ def run(ensure: bool) -> None:
     json_data = {}
     pods = os.path.exists(PODS_PATH) and os.path.isdir(PODS_PATH)
 
-   
     with open("pulse.toml", 'rb') as toml_config:
         data = tomli.load(toml_config)
 
+    if not "runtime" in data:
+        logging.fatal("Fatal error occurred -> Runtime table is not present. Exit code: 31")
+        stroke.dump(31)
+        return
+
     runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
     runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
+
+    logging.debug("Informations gathered, loading from files...")
 
     # This should be built on pulse.toml
     with open(os.path.join(runtime_loc, "config.json"), 'r') as json_file:
@@ -67,8 +73,8 @@ def run(ensure: bool) -> None:
             download.get_asset('runtime', data['runtime']['version'])
 
         else:
-            logging.fatal("Fatal error occurred -> Error cloning repository. Exit code: 31")
-            stroke.dump(31)
+            logging.fatal("Fatal error occurred -> Runtime version is not specified. Exit code: 32")
+            stroke.dump(32)
             return
 
     # move plugins and add them to config.json
