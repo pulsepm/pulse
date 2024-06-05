@@ -35,13 +35,12 @@ def run(ensure: bool) -> None:
     json_data = {}
     pods = os.path.exists(PODS_PATH) and os.path.isdir(PODS_PATH)
 
-    runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
-    runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
-
-    logging.debug("Informations gathered, loading from files...")
-
+   
     with open("pulse.toml", 'rb') as toml_config:
         data = tomli.load(toml_config)
+
+    runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
+    runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
 
     # This should be built on pulse.toml
     with open(os.path.join(runtime_loc, "config.json"), 'r') as json_file:
@@ -94,6 +93,9 @@ def run(ensure: bool) -> None:
 
     #move the mode
     logging.debug("Moving the gamemode and setting it to config.json...")
+    if not os.path.isfile(os.path.join(os.getcwd(), data['project']['output'])):
+        print("No output file") #STROKE!
+        return
     shutil.copy(os.path.join(os.getcwd(), data['project']['output']), os.path.join(runtime_loc, "gamemodes"))
 
     with open(os.path.join(runtime_loc, "config.json"), 'w') as json_file:
