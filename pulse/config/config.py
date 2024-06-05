@@ -157,18 +157,18 @@ def load() -> dict:
     global toml_data
     full_path = os.path.join(CONFIG_PATH, "pulseconfig.toml")
 
-    print("DEBUG: Loading the configuration file...")
+    logging.debug("Loading the configuration file...")
     try:
         with open(full_path, "rb") as file:
             toml_data = tomli.load(file)
-            print("INFO: Configuration has been loaded.")
+            logging.info("Configuration has been loaded.")
 
     except FileNotFoundError:
         create()
 
     except tomli.TOMLDecodeError as e:
-        print(f"STROKE: Fatal error occurred. Exit code: 2")
-        stroke.dump(2, e)
+        logging.fatal("Fatal error occurred -> Can't decode TOML file. Exit code: 11")
+        stroke.dump(11, e)
         
 
     return toml_data
