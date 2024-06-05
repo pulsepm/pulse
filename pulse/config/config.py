@@ -122,21 +122,21 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
 
     elif choice == 3:
         log_power = click.prompt("Input log messages power:")
-        toml_data["log"] = log_power
+        toml_data["log"] = int(log_power)
         logging.info("Pulse logging power has been modified.")
         modify(choice)
 
-    elif choice == 5:
+    elif choice == 4:
         stroke = click.confirm("Dump strokes?")
         toml_data["stroke"] = stroke
         logging.info("Pulse stroke dump automatization has been modified.")
         modify(choice)
 
-    elif choice == 6:
+    elif choice == 5:
         logging.debug("Saving the data..")
         write(toml_data, "wb")
 
-    elif choice == 7:
+    elif choice == 6:
         logging.debug("Exiting without data saving...")
         sys.exit()
 
