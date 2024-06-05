@@ -44,6 +44,12 @@ def run(ensure: bool) -> None:
         return
 
     runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
+   
+    if not "version" in data:
+        logging.fatal("Fatal error occurred -> Runtime version is not specified. Exit code: 32")
+        stroke.dump(32)
+        return
+    
     runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
 
     logging.debug("Informations gathered, loading from files...")
@@ -68,14 +74,8 @@ def run(ensure: bool) -> None:
     # if pods, just run the server from
     if not os.path.exists(file_name) and not pods:
         # read the toml
-        if 'version' in data['runtime']:
-            logging.warning("There's no downloaded runtimes. Downloading the specified one...")
-            download.get_asset('runtime', data['runtime']['version'])
-
-        else:
-            logging.fatal("Fatal error occurred -> Runtime version is not specified. Exit code: 32")
-            stroke.dump(32)
-            return
+        logging.warning("There's no downloaded runtimes. Downloading the specified one...")
+        download.get_asset('runtime', data['runtime']['version'])
 
     # move plugins and add them to config.json
     # plugins should be moved to ppc/runtime/version/plugins and added to the respective config.json through pulse.toml or in .pods if pods
@@ -95,13 +95,13 @@ def run(ensure: bool) -> None:
                 logging.debug(f"Appendend file: {file}")
     
     logging.info("Plugins has been moved succesfully.")
-    
 
     #move the mode
     logging.debug("Moving the gamemode and setting it to config.json...")
     if not os.path.isfile(os.path.join(os.getcwd(), data['project']['output'])):
         print("No output file") #STROKE!
         return
+
     shutil.copy(os.path.join(os.getcwd(), data['project']['output']), os.path.join(runtime_loc, "gamemodes"))
 
     with open(os.path.join(runtime_loc, "config.json"), 'w') as json_file:
