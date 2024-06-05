@@ -220,7 +220,7 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
 
     cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
     os.makedirs(cwd_path, exist_ok=True)
-    if system() == "Windows":
+    if archive.endswith(".zip"):
         with ZipFile(archive) as zf:
             for archive_file in zf.namelist():
                 with zf.open(archive_file) as af:
@@ -228,7 +228,7 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                         zf.extract(af.name, cwd_path)
                         break
 
-    if system() == "Linux":
+    if archive.endswith(".tar.gz"):
         with tarfile.open(archive, "r:gz") as tf:
             for archive_file in tf.getnames():
                 if re.match(required_plugin[0], archive_file):
