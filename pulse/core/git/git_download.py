@@ -209,28 +209,18 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
             archive = os.path.join(path, asset["name"])
             with open(archive, "wb") as f:
                 f.write(r.content)
-            break
 
     print(
         f"Installed resource: {asset['name']} in {path}"
     )
     required_plugin = git_get.get_resource_plugins(origin_path, package_type)
-    if not required_plugin:
-        return print("Plugins not found")
-
-    cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
-    os.makedirs(cwd_path, exist_ok=True)
-    if archive.endswith(".zip"):
+    if required_plugin:
         with ZipFile(archive) as zf:
             for archive_file in zf.namelist():
                 with zf.open(archive_file) as af:
                     if re.match(required_plugin[0], af.name):
+                        cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
+                        os.makedirs(cwd_path, exist_ok=True)
                         zf.extract(af.name, cwd_path)
                         break
-
-    if archive.endswith(".tar.gz"):
-        with tarfile.open(archive, "r:gz") as tf:
-            for archive_file in tf.getnames():
-                if re.match(required_plugin[0], archive_file):
-                    tf.extract(archive_file, cwd_path)
-                    break
+ 
