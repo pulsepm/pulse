@@ -1,3 +1,4 @@
+import logging
 import json
 import os
 import datetime
@@ -11,17 +12,16 @@ def dump(code: int, meta: str = None) -> None:
         return
 
     data = config.load()
-    print("DUMP")
     if data.get("stroke", False) == False: 
         return
 
+    logging.debug("Dumping the stroke...")
     timedate = datetime.datetime.now()
     timedate_file = timedate.strftime("%Y-%m-%dT%H:%M:%S")
     timedate_name = timedate.strftime("%Y%m%dT%H%M%S")
     name = f"stroke_{timedate_name}{code}.json"
     name = name.strip()
 
-    print("DUMP2")
     error_node = {
         "event_timestamp": timedate_file,
         "code": code,
@@ -36,9 +36,9 @@ def dump(code: int, meta: str = None) -> None:
         "error": error_node,
         "fix": fix_node
     }
-    print("DUMP3")
 
     os.makedirs(STROKE_PATH, exist_ok=True)
     with open(os.path.join(STROKE_PATH, name), "w") as dump_file:
         json.dump(node, dump_file, indent=4)
-    print("DUMP4")
+    
+    logging.info("Stroke has been dumped!")
