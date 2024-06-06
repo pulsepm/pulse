@@ -187,7 +187,7 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
                         break
 
     if archive.string.endswith(".tar.gz"):
-        with tarfile.open(archive, "r:gz") as tf:
+        with tarfile.open(archive.string, "r:gz") as tf:
             for archive_file in tf.getnames():
                 if re.match(required_plugin[0], archive_file):
                     tf.extract(archive_file, cwd_path)
