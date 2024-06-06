@@ -9,6 +9,7 @@ from pulse.package.package_uninstall import uninstall
 from pulse.package.package_ensure import ensure
 from pulse.run.run import run
 from pulse.stroke.stroke import stroke
+from pulse.package.package_pack import package
 
 
 @click.group()
@@ -30,3 +31,4 @@ pulse.add_command(uninstall)
 pulse.add_command(ensure)
 pulse.add_command(run)
 pulse.add_command(stroke)
+pulse.add_command(package)
