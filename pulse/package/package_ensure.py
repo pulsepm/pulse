@@ -1,5 +1,6 @@
 import os
 from typing import Literal
+import tarfile
 from zipfile import ZipFile
 import click
 import re
@@ -165,20 +166,32 @@ def ensure_dependencies(dependencies: list[str]) -> None:
 def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pulse", "sampctl"]) -> None:
     required_plugin = git_get.get_resource_plugins(origin_path, package_type)
     plugin_path = os.path.join(PLUGINS_PATH, resource[0], resource[1])
-    if required_plugin:
-        for file in os.listdir(plugin_path):
-            archive = re.match(resource[2], file)
-            if archive:
-                break
+    if not required_plugin:
+        return
 
+    for file in os.listdir(plugin_path):
+        archive = re.match(resource[2], file)
+        if archive:
+            break
+
+    cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
+    if not os.path.exists(cwd_path):
+        os.makedirs(cwd_path)
+
+    if archive.string.endswith(".zip"):
         with ZipFile(os.path.join(plugin_path, archive.string)) as zf:
             for archive_file in zf.namelist():
                 with zf.open(archive_file) as af:
                     if re.match(required_plugin[0], af.name):
-                        cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
-                        os.makedirs(cwd_path, exist_ok=True)
                         zf.extract(af.name, cwd_path)
                         break
+
+    if archive.string.endswith(".tar.gz"):
+        with tarfile.open(archive, "r:gz") as tf:
+            for archive_file in tf.getnames():
+                if re.match(required_plugin[0], archive_file):
+                    tf.extract(archive_file, cwd_path)
+                    break
 
 
 def get_pulse_requirements(path) -> dict[str] | bool:
