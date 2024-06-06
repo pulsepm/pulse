@@ -1,6 +1,5 @@
 import os
 import tarfile
-import stat
 from zipfile import ZipFile
 from platform import system
 from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH
@@ -219,7 +218,9 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
         return print("Plugins not found")
 
     cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
-    os.makedirs(cwd_path, exist_ok=True)
+    if not os.path.exists(cwd_path):
+        os.makedirs(cwd_path)
+
     if archive.endswith(".zip"):
         with ZipFile(archive) as zf:
             for archive_file in zf.namelist():
