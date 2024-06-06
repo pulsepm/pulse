@@ -122,21 +122,21 @@ def modify(choice: int = 0, load_data: bool = False) -> None:
 
     elif choice == 3:
         log_power = click.prompt("Input log messages power:")
-        toml_data["log"] = log_power
+        toml_data["log"] = int(log_power)
         logging.info("Pulse logging power has been modified.")
         modify(choice)
 
-    elif choice == 5:
+    elif choice == 4:
         stroke = click.confirm("Dump strokes?")
         toml_data["stroke"] = stroke
         logging.info("Pulse stroke dump automatization has been modified.")
         modify(choice)
 
-    elif choice == 6:
+    elif choice == 5:
         logging.debug("Saving the data..")
         write(toml_data, "wb")
 
-    elif choice == 7:
+    elif choice == 6:
         logging.debug("Exiting without data saving...")
         sys.exit()
 
@@ -157,18 +157,18 @@ def load() -> dict:
     global toml_data
     full_path = os.path.join(CONFIG_PATH, "pulseconfig.toml")
 
-    print("DEBUG: Loading the configuration file...")
+    logging.debug("Loading the configuration file...")
     try:
         with open(full_path, "rb") as file:
             toml_data = tomli.load(file)
-            print("INFO: Configuration has been loaded.")
+            logging.info("Configuration has been loaded.")
 
     except FileNotFoundError:
         create()
 
     except tomli.TOMLDecodeError as e:
-        print(f"STROKE: Fatal error occurred. Exit code: 2")
-        stroke.dump(2, e)
+        logging.fatal("Fatal error occurred -> Can't decode TOML file. Exit code: 11")
+        stroke.dump(11, e)
         
 
     return toml_data

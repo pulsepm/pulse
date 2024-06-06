@@ -40,6 +40,6 @@ def clone_github_repo(repo_url: Url, destination_folder: str, no_git=True) -> No
 
         logging.info(f"Repository cloned successfully to {destination_folder}")
     except git.GitCommandError as e:
-        logging.fatal(f"Error cloning repository: {e}")
-        stroke.dump(3)
+        logging.fatal("Fatal error occurred -> Error cloning repository. Exit code: 21")
+        stroke.dump(21)
         return
