@@ -46,22 +46,22 @@ def pack(versioning: str, version: str, platform: click.Choice(['windows', 'linu
         data = tomli.load(toml_config)
 
     if not ('resources' in data and platform in data['resources']):
-        logger.fatal("Fatal error occurred -> No resources table has been specified. Exit code: 42")
+        logging.fatal("Fatal error occurred -> No resources table has been specified. Exit code: 42")
         stroke.dump(42)
         return
 
     if not "release_folder" in data[f"resources"][platform]:
-        logger.fatal("Fatal error occurred -> No release_folder has been specified within resources table. Exit code: 43")
+        logging.fatal("Fatal error occurred -> No release_folder has been specified within resources table. Exit code: 43")
         stroke.dump(43)
         return
 
     elif not os.path.exists(data[f"resources"][platform]["release_folder"]):
-        logger.fatal("Fatal error occurred -> release_folder has been specified within resources table, but it doesn't exists within current working directory. Exit code: 44")
+        logging.fatal("Fatal error occurred -> release_folder has been specified within resources table, but it doesn't exists within current working directory. Exit code: 44")
         stroke.dump(44)
         return
     
     if not os.listdir(os.path.join(os.getcwd(), data[f"resources"][platform]["release_folder"])):
-        logger.fatal("Fatal error occurred -> release_folder has been specified within resources table and is present, but empty. Exit code: 45")
+        logging.fatal("Fatal error occurred -> release_folder has been specified within resources table and is present, but empty. Exit code: 45")
         stroke.dump(45)
         return
 
@@ -71,7 +71,7 @@ def pack(versioning: str, version: str, platform: click.Choice(['windows', 'linu
     }
     
     if os.path.isfile(os.path.join(os.getcwd(), "package.rel")):
-        logger.fatal("Fatal error occurred -> Release has been staged already. Exit code: 46")
+        logging.fatal("Fatal error occurred -> Release has been staged already. Exit code: 46")
         stroke.dump(46)
         return
 
