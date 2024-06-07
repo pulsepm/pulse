@@ -7,12 +7,12 @@ import pulse.config.config as config
 from .stroke_codes import stroke_errors
 from pulse.core.core_dir import STROKE_PATH
 
-def dump(code: int, meta: str = None) -> None:
+def dump(code: int, meta: str = None, __as_command: bool = False) -> None:
     if not code in stroke_errors:
         return
 
     data = config.load()
-    if data.get("stroke", False) == False: 
+    if data.get("stroke", False) == False and __as_command is False: 
         return
 
     logging.debug("Dumping the stroke...")
