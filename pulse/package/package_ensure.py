@@ -178,8 +178,9 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
 
+    archive_path = os.path.join(plugin_path, archive.string)
     if archive.string.endswith(".zip"):
-        with ZipFile(os.path.join(plugin_path, archive.string)) as zf:
+        with ZipFile(archive_path) as zf:
             for archive_file in zf.namelist():
                 with zf.open(archive_file) as af:
                     if re.match(required_plugin[0], af.name):
@@ -187,7 +188,7 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
                         break
 
     if archive.string.endswith(".tar.gz"):
-        with tarfile.open(archive, "r:gz") as tf:
+        with tarfile.open(archive_path, "r:gz") as tf:
             for archive_file in tf.getnames():
                 if re.match(required_plugin[0], archive_file):
                     tf.extract(archive_file, cwd_path)
