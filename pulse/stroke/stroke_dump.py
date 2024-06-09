@@ -3,6 +3,7 @@ import json
 import os
 import datetime
 import pulse.config.config as config
+import random
 
 from .stroke_codes import stroke_errors
 from pulse.core.core_dir import STROKE_PATH
@@ -10,6 +11,8 @@ from pulse.core.core_dir import STROKE_PATH
 def dump(code: int, meta: str = None, __as_command: bool = False) -> None:
     if not code in stroke_errors:
         return
+
+    rand_5 = random.randint(10000, 99999)
 
     data = config.load()
     if data.get("stroke", False) == False and __as_command is False: 
@@ -19,7 +22,7 @@ def dump(code: int, meta: str = None, __as_command: bool = False) -> None:
     timedate = datetime.datetime.now()
     timedate_file = timedate.strftime("%Y-%m-%dT%H:%M:%S")
     timedate_name = timedate.strftime("%Y%m%dT%H%M%S")
-    name = f"stroke_{timedate_name}{code}.json"
+    name = f"stroke_{timedate_name}{code}_{rand_5}.json"
     name = name.strip()
 
     error_node = {
