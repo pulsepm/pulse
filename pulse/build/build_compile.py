@@ -4,6 +4,7 @@ import pulse.download.download as download
 import subprocess
 import shutil
 import re
+import json
 
 from pulse.core.core_dir import COMPILER_PATH
 
@@ -50,9 +51,15 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
                 requirement = re.split(r'/|@|:|#', str(item))[1].split('/')[0]
                 print(f"requirement: {requirement}")
 
-            # append them
+            # append them by reading json if there's json field include_path otherwise just append root
                 if not f"-irequirements/{requirement}" in options:
-                    options.append('-irequirements/'+f'{requirement}')
+                    with open(os.path.join("requirements", requirement, "pawn.json"), 'r') as config:
+                        config_data = json.load(config)
+                        if "include_path" in config_data:
+                            options.append('-irequirements/'+f'{requirement}/'+f'{config_data["include_path"]}')
+                        else:
+                            options.append('-irequirements/'+f'{requirement}')
+
                     print(f"OPTIONS: {options}")
 
 
