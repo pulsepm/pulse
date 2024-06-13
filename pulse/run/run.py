@@ -38,14 +38,14 @@ def run(ensure: bool) -> None:
     with open("pulse.toml", 'rb') as toml_config:
         data = tomli.load(toml_config)
 
-    if not "runtime" in data:
+    if not "runtime" in data and pods is False:
         logging.fatal("Fatal error occurred -> Runtime table is not present. Exit code: 31")
         stroke.dump(31)
         return
 
     runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
    
-    if not "version" in data["runtime"]:
+    if not "version" in data["runtime"] and pods is False:
         logging.fatal("Fatal error occurred -> Runtime version is not specified. Exit code: 32")
         stroke.dump(32)
         return
