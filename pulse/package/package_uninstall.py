@@ -56,7 +56,7 @@ def uninstall(package: str, recursive: bool, force: bool) -> None:
     resource = git_get.get_package_resources(package_path, package_type)
     if resource:
         print(f"Found resource for {re_package[0]}/{re_package[1]} ({package_type})!")
-        remove_resource(package_path, resource, package_type, recursive=recursive)
+        remove_resource(package_path, resource, package_type)
 
     package_utils.remove_requirements(
         re_package[0],
@@ -111,9 +111,10 @@ def remove_dependencies(dependencies) -> None:
         remove_package(dependence[0], dependence[1])
 
 
-def remove_resource(origin_path, resource: tuple[str], package_type, recursive: bool = False) -> None:
+def remove_resource(origin_path, resource: tuple[str], package_type) -> None:
     owner, repo, release = resource
-    if recursive:
+    resource_path = os.path.join(PLUGINS_PATH, owner, repo)
+    if os.path.exists(resource_path):
         shutil.rmtree(os.path.join(PLUGINS_PATH, owner, repo))
 
     plugin = git_get.get_resource_plugins(origin_path, package_type)
