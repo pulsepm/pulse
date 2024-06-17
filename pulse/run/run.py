@@ -18,8 +18,7 @@ from .run_convert import config_convert
 
 @click.command
 @click.option('--ensure', '-e', is_flag=True, default=False)
-@click.argument('profile', required=False, type=str)
-def run(ensure: bool, profile: str) -> None:
+def run(ensure: bool) -> None:
     """
     Start the project.
     """
