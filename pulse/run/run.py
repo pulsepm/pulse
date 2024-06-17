@@ -14,6 +14,7 @@ from pulse.core.core_dir import RUNTIME_PATH, PODS_PATH, REQUIREMENTS_PATH
 from pulse.package.package_ensure import ensure_packages
 from pulse.run.run_server import server
 
+from .run_convert import config_convert
 
 @click.command
 @click.option('--ensure', '-e', is_flag=True, default=False)
@@ -33,6 +34,7 @@ def run(ensure: bool) -> None:
     logging.debug("Gathering information...")
     data = {}
     json_data = {}
+    plugins = []
     pods = os.path.exists(PODS_PATH) and os.path.isdir(PODS_PATH)
 
     with open("pulse.toml", 'rb') as toml_config:
@@ -52,13 +54,7 @@ def run(ensure: bool) -> None:
     
     runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
 
-    logging.debug("Informations gathered, loading from files...")
-
-    # This should be built on pulse.toml
-    with open(os.path.join(runtime_loc, "config.json"), 'r') as json_file:
-        json_data = json.load(json_file)
-
-    logging.info("Files has been parsed succesfully!")
+    logging.info("Informations gathered.")
 
     if ensure:
         ensure_packages()
@@ -80,8 +76,7 @@ def run(ensure: bool) -> None:
     # move plugins and add them to config.json
     # plugins should be moved to ppc/runtime/version/plugins and added to the respective config.json through pulse.toml or in .pods if pods
     # now loop through plugins
-    logging.debug("Moving plugins and adding the to config.json.")
-    json_data['pawn']['legacy_plugins'].clear()
+    logging.debug("Converting pulse.toml to config.json...")
 
     if os.path.exists(os.path.join(REQUIREMENTS_PATH, "plugins")):
         for file in os.listdir(os.path.join(REQUIREMENTS_PATH, "plugins")):
@@ -90,11 +85,14 @@ def run(ensure: bool) -> None:
                 os.makedirs(runtime_plugins, exist_ok=True)
 
                 shutil.copy(full_file, runtime_plugins)
-                # add them to config.json
-                json_data['pawn']['legacy_plugins'].append(file)
+                # add them to pulse.toml
+                plugins.append(file)
                 logging.debug(f"Appendend file: {file}")
+
+        
+        logging.info("Plugins has been moved succesfully.")
     
-    logging.info("Plugins has been moved succesfully.")
+    config_convert(os.path.join(os.getcwd(), 'pulse.toml'), os.path.join(runtime_loc, "config.json"))
 
     #move the mode
     logging.debug("Moving the gamemode and setting it to config.json...")
@@ -104,9 +102,22 @@ def run(ensure: bool) -> None:
 
     shutil.copy(os.path.join(os.getcwd(), data['project']['output']), os.path.join(runtime_loc, "gamemodes"))
 
-    with open(os.path.join(runtime_loc, "config.json"), 'w') as json_file:
-        json_data['pawn']['main_scripts'].clear()
+    with open(os.path.join(runtime_loc, "config.json"), 'r+') as json_file:
+        json_data = json.load(json_file)
+        if 'main_scripts' in json_data['pawn']:
+            json_data['pawn']['main_scripts'].clear() 
+        else:
+            json_data['pawn']['main_scripts'] = []
+
+        if 'legacy_plugins' in json_data['pawn']:
+            json_data['pawn']['legacy_plugins'].clear()
+        else:
+            json_data['pawn']['legacy_plugins'] = []
+
         json_data['pawn']['main_scripts'].append(os.path.basename(data['project']['output'][:-4]))
+        json_data['pawn']['legacy_plugins'].extend(plugins)
+        json_file.seek(0)
+        json_file.truncate()
         json.dump(json_data, json_file, indent=4)
 
     os.chdir(runtime_loc)
