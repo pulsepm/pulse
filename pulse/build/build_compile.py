@@ -53,12 +53,13 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
 
             # append them by reading json if there's json field include_path otherwise just append root
                 if not f"-irequirements/{requirement}" in options:
-                    with open(os.path.join("requirements", requirement, "pawn.json"), 'r') as config:
-                        config_data = json.load(config)
-                        if "include_path" in config_data:
-                            options.append('-irequirements/'+f'{requirement}/'+f'{config_data["include_path"]}')
-                        else:
-                            options.append('-irequirements/'+f'{requirement}')
+                    if os.path.exists(os.path.join("requirements", requirement, "pawn.json")):
+                        with open(os.path.join("requirements", requirement, "pawn.json"), 'r') as config:
+                            config_data = json.load(config)
+                            if "include_path" in config_data:
+                                options.append('-irequirements/'+f'{requirement}/'+f'{config_data["include_path"]}')
+                            else:
+                                options.append('-irequirements/'+f'{requirement}')
 
                     print(f"OPTIONS: {options}")
 
