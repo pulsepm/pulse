@@ -10,7 +10,7 @@ from .pack.pack import pack_folder
 from .pack.pack_version import CALVER_RE, SEMVER_RE
 
 @click.command()
-@click.option('--platform', required=True, type=click.Choice(['windows', 'linux', 'both'], case_sensitive=False), default=None, help="Platform to pack for.")
+@click.option('--platform', '-p', required=True, type=click.Choice(['windows', 'linux', 'both'], case_sensitive=False), default=None, help="Platform to pack for.")
 def package(platform: str) -> None:
     # prompt for the version and prompt for initial version, should and will prompt for calver and semver
     versioning: str = click.prompt("Select your versioning", type=click.Choice(["calver", "semver"], case_sensitive=False), show_choices=True)
