@@ -11,6 +11,11 @@ from .pack_zip import zip_folder
 
 def pack_folder(data: dict, version: str, platform: click.Choice(['windows', 'linux'], case_sensitive=False)) -> Union[str, bool]:
 
+    # valid paths are only FOLDER/(component|plugins)
+    expected_dirs: list[str] = ["plugins", "components"]
+    unexpected_dirs: list[str] = [dir for dir in os.listdir(os.path.join(os.getcwd(), data[f"resources"][platform]["release_folder"]))
+                                if os.path.isdir(os.path.join(os.getcwd(), data[f"resources"][platform]["release_folder"])) and dir not in expected_dirs]
+
     if not ('resources' in data and platform in data['resources']):
         logging.fatal("Fatal error occurred -> No resources table has been specified. Exit code: 42")
         stroke.dump(42)
@@ -31,6 +36,11 @@ def pack_folder(data: dict, version: str, platform: click.Choice(['windows', 'li
         stroke.dump(45, f"[resource.{platform}] table.")
         return False
 
+    if unexpected_dirs:
+        logging.fatal("Fatal error occurred -> Unexpected directory or file found within releases folder. Exit code: 48")
+        stroke.dump(48, f"[resource.{platform}] table.")
+        return False
+    
     output_filename = f"{data['project']['repo']}-{version}-win32.zip" if platform == 'windows' else f"{data['project']['repo']}-{version}-linux.tar.gz"
     if platform == 'windows':
         zip_folder(data[f"resources"][platform]["release_folder"], output_filename)
