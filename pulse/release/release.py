@@ -36,6 +36,7 @@ def release(pre: bool):
         if "rel_linux" in r_data:
             files_to_attach.append(r_data["rel_linux"])
 
+        tag_message: str = click.prompt("Tag message")
         release_name: str = click.prompt("Input your release title")
         release_message: str = click.prompt("Input your release information")
 
@@ -46,7 +47,7 @@ def release(pre: bool):
         create_and_upload_release(
             os.path.join(os.getcwd(), ".git"),
             r_data["version"],
-            "e",
+            tag_message,
             release_name,
             release_message,
             files_to_attach,
