@@ -49,5 +49,4 @@ def init() -> None:
     config.write(data, "wb")
 
     if create:
-        click.secho("Repository has been created successfully", fg="green")
         create_repository(name, repo, data["token"])

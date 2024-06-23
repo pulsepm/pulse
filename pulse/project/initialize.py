@@ -22,22 +22,24 @@ def initialize(
     project_dir = os.path.join(current_dir, repo_name)
     project_table = {"name": name, "publisher": publisher, "repo": repo_name, "entry": entry, "output": output}
 
-    server = None
-    compiler_data = None
+    server = {}
+    compiler_data = {}
 
     if os.path.isdir(project_dir):
         print(f"Fatal error: Folder {repo_name} already exists")
         return
 
     git_clone.clone_github_repo("https://github.com/pulsepm/boilerplate", project_dir)
+    os.chdir(project_dir)
 
-    compiler = download.get_compiler(pods)
+    compiler = download.get_compiler(False)
     runtime = download.get_runtime(pods)
 
     if not pods:  # not isolated then just add the corresponding versions to toml
         server = {"version": runtime}  # Later with more options
 
-        compiler_data = {"version": compiler}
+    
+    compiler_data = {"version": compiler}
 
     data = {"project": project_table, "runtime": server, "compiler": compiler_data}
 

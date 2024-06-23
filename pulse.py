@@ -14,8 +14,11 @@ if __name__ == "__main__":
     if root_logger.hasHandlers():
         root_logger.handlers.clear()
         
-    logging.basicConfig(format=log_format, level=info.get("log", 0))
-    
+    logging.basicConfig(format=log_format, level=info.get("log", logging.DEBUG))
+
     logging.getLogger("git.cmd").setLevel(level=logging.ERROR)
-    
+
+    logging.getLogger('requests').setLevel(logging.ERROR)
+    logging.getLogger('urllib3').setLevel(logging.ERROR)
+
     pulse()

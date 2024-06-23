@@ -1,4 +1,6 @@
 from typing import Union
+import git
+import os
 
 import requests
 
@@ -66,6 +68,17 @@ def create_repository(username: str, repository_name: str, access_token: str) ->
             print(
                 f"Failed to create repository on GitHub. Status code: {response.status_code}, Message: {response.text}"
             )
+            return
+
+        local_repo = git.Repo.init(os.getcwd())
+
+        # Add remote origin to local repository
+        origin_url = f"https://github.com/{username}/{repository_name}.git"
+        origin = local_repo.create_remote('origin', url=origin_url)
+
+        print(f"Local repository initialized at: {os.getcwd()}")
+        print(f"Remote origin set to: {origin_url}")
+
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 

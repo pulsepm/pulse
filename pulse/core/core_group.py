@@ -10,6 +10,7 @@ from pulse.package.package_ensure import ensure
 from pulse.run.run import run
 from pulse.stroke.stroke import stroke
 from pulse.package.package_pack import package
+from pulse.release.release import release
 
 
 @click.group()
@@ -32,3 +33,4 @@ pulse.add_command(ensure)
 pulse.add_command(run)
 pulse.add_command(stroke)
 pulse.add_command(package)
+pulse.add_command(release)
