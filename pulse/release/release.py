@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from ..core.core_dir import CONFIG_PATH
-from ..core.git.git_release import create_and_upload_release
+from ..core.git.git_release import publish_release
 
 @click.command
 @click.option("--pre", "-p", type=bool, required=False, is_flag=True, default=False)
@@ -44,7 +44,7 @@ def release(pre: bool):
             f"{project_data['project']['publisher']}/{project_data['project']['repo']}"  # Format: "owner/repo"
         )
 
-        create_and_upload_release(
+        publish_release(
             os.path.join(os.getcwd(), ".git"),
             r_data["version"],
             tag_message,

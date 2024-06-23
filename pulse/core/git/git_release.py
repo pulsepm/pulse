@@ -1,28 +1,46 @@
 from git import Repo
 from github import Github
+from github.Repository import Repository
 import os
+import logging
 
-def create_and_upload_release(repo_path, tag_name, tag_message, release_name, release_message, file_path, github_token, repo_name, pre):
+
+def publish_release(
+    repo_path: str,
+    tag_name: str,
+    tag_message: str,
+    release_name: str,
+    release_message: str,
+    file_path: str,
+    github_token: str,
+    repo_name: str,
+    pre: bool,
+):
     repo = Repo(repo_path)
-    
-    new_tag = repo.create_tag(tag_name, message=tag_message)
-    print(f"Created local tag {tag_name}")
 
-    origin = repo.remote(name='origin')
+    logging.debug("Creating local tag and pushing it to remote...")
+    repo.create_tag(tag_name, message=tag_message)
+    logging.info(f"Created local tag {tag_name}")
+
+    origin = repo.remote(name="origin")
     origin.push(tag_name)
-    print(f"Pushed tag {tag_name} to remote")
+    logging.info(f"Pushed tag {tag_name} to remote!")
 
+    logging.debug("Creating a release...")
     g = Github(github_token)
-    print(github_token)
-    print(repo_name)
-    github_repo = g.get_repo(repo_name)
-    print(github_repo)
-    
-    release = github_repo.create_git_release(tag=tag_name, name=release_name, message=release_message, generate_release_notes=True, prerelease=pre)
-    print("HERE")
-    print(f"Created release {release_name} on GitHub")
+    github_repo: Repository = g.get_repo(repo_name)
 
+    release = github_repo.create_git_release(
+        tag=tag_name,
+        name=release_name,
+        message=release_message,
+        generate_release_notes=True,
+        prerelease=pre,
+    )
+    logging.info(f"Created release {release_name} on GitHub!")
+
+    logging.info("Uploading files to release...")
     for r_file in file_path:
-        with open(r_file, 'rb') as file:
+        with open(r_file, "rb"):
             release.upload_asset(path=r_file, label=os.path.basename(r_file))
-            print(f"Uploaded {r_file} to release {release_name}")
+            logging.info(f"Uploaded {r_file} to release {release_name}")
