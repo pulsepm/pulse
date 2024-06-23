@@ -21,6 +21,4 @@ if __name__ == "__main__":
     logging.getLogger('requests').setLevel(logging.ERROR)
     logging.getLogger('urllib3').setLevel(logging.ERROR)
 
-    print(logging.getLogger("requests"))
-    
     pulse()
