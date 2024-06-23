@@ -13,9 +13,13 @@ def create_and_upload_release(repo_path, tag_name, tag_message, release_name, re
     print(f"Pushed tag {tag_name} to remote")
 
     g = Github(github_token)
+    print(github_token)
+    print(repo_name)
     github_repo = g.get_repo(repo_name)
+    print(github_repo)
     
     release = github_repo.create_git_release(tag=tag_name, name=release_name, message=release_message, generate_release_notes=True, prerelease=pre)
+    print("HERE")
     print(f"Created release {release_name} on GitHub")
 
     for r_file in file_path:
