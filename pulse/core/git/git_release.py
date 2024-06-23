@@ -44,3 +44,6 @@ def publish_release(
         with open(r_file, "rb"):
             release.upload_asset(path=r_file, label=os.path.basename(r_file))
             logging.info(f"Uploaded {r_file} to release {release_name}")
+
+    
+    os.remove(os.path.join(os.getcwd(), "package.rel"))
