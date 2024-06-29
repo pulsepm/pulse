@@ -1,7 +1,7 @@
 import click
 import os
 import tomli
-import pulse.stroke.stroke_dump as stroke
+import pulse.stroke as stroke
 import logging
 
 from typing import Any

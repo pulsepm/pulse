@@ -9,6 +9,7 @@ import tomli_w
 import pulse.config.config_choices as config
 from pulse.core.core_dir import CONFIG_PATH
 import logging
+import pulse.stroke as stroke
 
 
 toml_data = {}

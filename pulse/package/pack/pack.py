@@ -1,7 +1,7 @@
 import os
 import click
 import logging
-import pulse.stroke.stroke as stroke
+import pulse.stroke as stroke
 
 from typing import Union
 

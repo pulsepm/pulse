@@ -4,7 +4,7 @@ import logging
 import tomli
 import tomli_w
 import re
-import pulse.stroke.stroke as stroke
+import pulse.stroke as stroke
 from typing import Literal
 from .pack.pack import pack_folder
 from .pack.pack_version import CALVER_RE, SEMVER_RE

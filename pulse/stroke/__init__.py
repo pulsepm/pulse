@@ -1,6 +1,5 @@
 import click
-from .stroke_dump import dump
-
+from .code.stroke_dump import dump
 
 @click.command
 @click.argument("code", type=int)

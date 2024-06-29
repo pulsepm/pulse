@@ -8,7 +8,7 @@ import tomli
 import json
 import logging
 
-import pulse.stroke.stroke as stroke
+import pulse.stroke as stroke
 import pulse.download.download as download
 from pulse.core.core_dir import RUNTIME_PATH, PODS_PATH, REQUIREMENTS_PATH
 from pulse.package.package_ensure import ensure_packages

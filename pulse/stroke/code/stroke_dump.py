@@ -5,7 +5,7 @@ import datetime
 import pulse.config.config as config
 import random
 
-from .stroke_codes import stroke_errors
+from ._stroke_codes import stroke_errors
 from typing import Any, Union
 from pulse.core.core_dir import STROKE_PATH
 

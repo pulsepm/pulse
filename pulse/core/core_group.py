@@ -8,7 +8,7 @@ from pulse.package.package_install import install
 from pulse.package.package_uninstall import uninstall
 from pulse.package.package_ensure import ensure
 from pulse.run.run import run
-from pulse.stroke.stroke import stroke
+from pulse.stroke import stroke
 from pulse.package.package_pack import package
 from pulse.release.release import release
 
