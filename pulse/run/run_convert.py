@@ -1,11 +1,11 @@
 import os
 import json
-import toml
+import tomli
 
 def config_convert(toml_file_path: str, json_file_path: str):
     
     with open(toml_file_path, 'r') as file:
-        config = toml.load(file)
+        config = tomli.load(file)
 
     config_profile = config.get('runtime', {})
 
