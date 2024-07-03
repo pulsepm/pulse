@@ -11,11 +11,12 @@ from pulse.run.run import run
 from pulse.stroke.stroke import stroke
 from pulse.package.package_pack import package
 from pulse.release.release import release
+import pulse.core.core_constants as core_constants
 
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
-    click.echo('pulse 0.2.0-alpha')
+    click.echo(core_constants.PROJECT_VERSION)
     ctx.exit()
 
 
