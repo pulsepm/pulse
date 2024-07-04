@@ -20,7 +20,7 @@ curl -sSL https://raw.githubusercontent.com/pulsepm/pulse/main/install.sh | bash
 ```
 
 ### Manual Installation
-1. Download the latest version of pulse from our [releases](https://github.com/pulsepm/pulse/releases).
+1. Download the latest version of Pulse from our [releases](https://github.com/pulsepm/pulse/releases).
 
 2. Mark the downloaded binary as executable:
 ```sh
@@ -34,6 +34,8 @@ mv pulse /usr/local/bin/ # sudo permissions are required by this specific path
 
 ### Development Installation
 To set up a development environment, ensure you have `pip` installed (it may be packaged as `pip` or `pip3` on your system).
+While it's possible to have Pulse working without setting up an virtual environment, it's strongly not recommended.
+If you don't want to bother with virtual environments, you may want to look into [pipx](https://github.com/pypa/pipx).
 
 1. Clone the repository:
 ```sh
@@ -55,7 +57,7 @@ virtualenv venv --distribute && source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-5. (Optional) Create a script for easier launching pulse
+5. (Optional) Create a script for easier launching Pulse
 Make sure `~/.local/bin` is in your `$PATH`.
 ```sh
 echo "python3 $(pwd)/pulse.py \"\$@\"" > ~/.local/bin/pulse && chmod u+x ~/.local/bin/pulse
