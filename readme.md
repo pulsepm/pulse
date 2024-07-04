@@ -11,6 +11,58 @@ Pulse Package Manager (PPM) is a comprehensive package manager designed specific
 - **Automatic Dependency Resolution**: Automatically resolve and install dependencies for added packages, reducing manual effort and ensuring consistency across environments.
 - **Project Initialization**: Initialize new open.mp projects with user-defined settings and configurations, streamlining the setup process for new development endeavors.
 
+## Installation and Updating
+### Linux
+#### Install Script (Recommended)
+Execute the script to install (or update if necessary) `pulse`.
+```sh
+curl -sSL https://raw.githubusercontent.com/pulsepm/pulse/main/install.sh | bash
+```
+
+### Manual Installation
+1. Download the latest version of Pulse from our [releases](https://github.com/pulsepm/pulse/releases).
+
+2. Mark the downloaded binary as executable:
+```sh
+chmod u+x pulse
+```
+
+3. (Optional) Move it to a location that's defined in your `$PATH`:
+```sh
+mv pulse /usr/local/bin/ # sudo permissions are required by this specific path
+```
+
+### Development Installation
+To set up a development environment, ensure you have `pip` installed (it may be packaged as `pip` or `pip3` on your system).
+While it's possible to have Pulse working without setting up an virtual environment, it's strongly not recommended.
+If you don't want to bother with virtual environments, you may want to look into [pipx](https://github.com/pypa/pipx).
+
+1. Clone the repository:
+```sh
+git clone https://github.com/pulsepm/pulse
+```
+
+2. Navigate to the project directory:
+```sh
+cd pulse
+```
+
+3. Create and activate a virtual environment:
+```sh
+virtualenv venv --distribute && source venv/bin/activate
+```
+
+4. Install the required dependencies:
+```sh
+pip install -r requirements.txt
+```
+
+5. (Optional) Create a script for easier launching Pulse
+Make sure `~/.local/bin` is in your `$PATH`.
+```sh
+echo "python3 $(pwd)/pulse.py \"\$@\"" > ~/.local/bin/pulse && chmod u+x ~/.local/bin/pulse
+```
+
 ## Contributing
 
 Contributions to Pulse Package Manager are welcome! If you encounter any issues or have suggestions for improvement, please feel free to open an issue or submit a pull request on the GitHub repository.
@@ -182,9 +234,7 @@ Ensures all packages are present.
 #### Behavior:
 The `pulse ensure` command reads the packages specified in `project_folder/pulse.toml`, then copies them from the Pulse Package Configuration to `project_folder/requirements` (including plugins, dependencies, etc.). If any packages are not found, they are installed and automatically copied.
 
-##
-
- License
+## License
 
 Pulse Package Manager is licensed under the [MIT License](LICENSE).
 ```
