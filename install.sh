@@ -19,15 +19,20 @@ get_download_url() {
 check_and_update() {
     local current_version
     local latest_version
-    current_version=$(pulse -v 2>&1 >/dev/null | awk '{print $2}')
-    latest_version=$(get_latest_version)
+    current_version=$(pulse -v 2>/dev/null | awk '{print $2}')
     
-    if [[ "${current_version}" != "${latest_version}" ]]; then
-        echo "Updating pulse from ${current_version} to ${latest_version}"
+    if [[ -z "${current_version}" ]]; then
+        echo "Could not determine the current version of pulse. Assuming update is needed."
         return 0
     else
-        echo "Pulse is already up to date (version ${current_version})."
-        return 1
+        latest_version=$(set -e; get_latest_version)
+        if [[ "${current_version}" != "${latest_version}" ]]; then
+            echo "Updating pulse from ${current_version} to ${latest_version}"
+            return 0
+        else
+            echo "Pulse is already up to date (version ${current_version})."
+            return 1
+        fi
     fi
 }
 
