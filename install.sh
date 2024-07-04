@@ -19,7 +19,7 @@ get_download_url() {
 check_and_update() {
     local current_version
     local latest_version
-    current_version=$(pulse -v | awk '{print $2}')
+    current_version=$(pulse -v 2>&1 >/dev/null | awk '{print $2}')
     latest_version=$(get_latest_version)
     
     if [[ "${current_version}" != "${latest_version}" ]]; then
