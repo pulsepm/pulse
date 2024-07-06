@@ -174,7 +174,7 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
         if archive:
             break
 
-    cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
+    cwd_path = REQUIREMENTS_PATH if "plugins/" in required_plugin[0] else os.path.join(REQUIREMENTS_PATH, "plugins")
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
 
