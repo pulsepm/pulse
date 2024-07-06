@@ -217,7 +217,7 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
     if not required_plugin:
         return print("Plugins not found")
 
-    cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
+    cwd_path = REQUIREMENTS_PATH if "plugins/" in required_plugin[0] else os.path.join(REQUIREMENTS_PATH, "plugins")
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
 
