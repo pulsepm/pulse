@@ -2,11 +2,13 @@ import os
 import tarfile
 from zipfile import ZipFile
 from platform import system
-from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH
+from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH, safe_open, CONFIG_FILE
 from typing import Literal
 from git import Repo
+from pulse.core.git.git import valid_token
 
 import re
+import tomli
 import requests
 import pulse.core.git.git_get as git_get
 import pulse.package.package_utils as package_utils
@@ -87,20 +89,29 @@ def download_and_unzip_github_release(
 
 
 def gitpython_download(owner: str, repo: str, version: str, save_path, raw_syntax: str) -> None:
+    token_file = safe_open(CONFIG_FILE, 'rb')
+    token_data = tomli.load(token_file)
+    token = token_data["token"]
+     
+    if valid_token(token):
+        print("VALID")
+    else:
+        print("INVALID")
     if "#" in raw_syntax:
         git_repo = Repo.clone_from(
-            f"https://github.com/{owner}/{repo}.git", save_path, single_branch=True
+            f"https://{{{token}}}@github.com/{owner}/{repo}.git", save_path, single_branch=True
         )
+        print(f"https://{{{token}}}@github.com/{owner}/{repo}.git")
         git_repo.head.reset(commit=version, index=True, working_tree=True)
 
     if ":" in raw_syntax:
-        git_repo = Repo.clone_from(f"https://github.com/{owner}/{repo}", save_path)
+        git_repo = Repo.clone_from(f"https://{{{token}}}@github.com/{owner}/{repo}", save_path)
         git = git_repo.git
         git.checkout(version)
 
     else:
         Repo.clone_from(
-            f"https://github.com/{owner}/{repo}.git",
+            f"https://{{{token}}}@github.com/{owner}/{repo}.git",
             save_path,
             single_branch=True,
             branch=version,
@@ -156,7 +167,7 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
             re_requirement.append(branch)
 
         pckg_path = os.path.join(
-            PACKAGE_PATH, re_requirement[0], re_requirement[1]
+            PACKAGE_PATH, str(re_requirement[0]), str(re_requirement[1])
         )
         if os.path.exists(pckg_path):
             print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
@@ -196,7 +207,7 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
 def download_resource(origin_path, resource: tuple[str], package_type: Literal["sampctl", "pulse"]) -> None:
     owner, repo, release = resource
     path = os.path.join(PLUGINS_PATH, owner, repo)
-    os.makedirs(path)
+    os.makedirs(path, exist_ok=True)
 
     request = requests.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest")
     response = request.json()

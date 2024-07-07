@@ -112,8 +112,8 @@ def ensure_dependencies(dependencies: list[str]) -> None:
 
             dependency.append(branch)
 
-        default_path = os.path.join(PACKAGE_PATH, dependency[0], dependency[1], dependency[2])
-        dependency_path = os.path.join(REQUIREMENTS_PATH, dependency[1])
+        default_path = os.path.join(str(PACKAGE_PATH), str(dependency[0]), str(dependency[1]), str(dependency[2]))
+        dependency_path = os.path.join(str(REQUIREMENTS_PATH), str(dependency[1]))
         if os.path.exists(dependency_path):
             print(f"Found installed dependency: {dependency[0]}/{dependency[1]}..")
             continue
@@ -206,7 +206,7 @@ def get_pulse_requirements(path) -> dict[str] | bool:
 
 
 def is_package_installed(owner: str, repo: str, version: str) -> bool:
-    package_path = os.path.join(PACKAGE_PATH, owner, repo, version)
+    package_path = os.path.join(PACKAGE_PATH, str(owner), str(repo), str(version))
     if os.path.exists(package_path):
         return True
 
