@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 shopt -s inherit_errexit
 
@@ -9,11 +8,11 @@ readonly INSTALL_DIR="${HOME}/.local/bin"
 readonly BINARY_PATH="${INSTALL_DIR}/${BINARY_NAME}"
 
 get_latest_version() {
-    curl -s "${API_URL}" | grep -m1 -Po '"tag_name": "\K.*?(?=")'
+    wget -qO- "${API_URL}" | grep -m1 -Po '"tag_name": "\K.*?(?=")'
 }
 
 get_download_url() {
-    curl -s "${API_URL}" | grep -m1 -Po '"browser_download_url": "\K.*pulse(?=")'
+    wget -qO- "${API_URL}" | grep -m1 -Po '"browser_download_url": "\K.*pulse(?=")'
 }
 
 check_and_update() {
@@ -41,7 +40,7 @@ download_and_install() {
     download_url=$(get_download_url)
     echo "Downloading pulse binary from ${download_url}"
     
-    if ! curl -L -o "${BINARY_PATH}" "${download_url}"; then
+    if ! wget -q -O "${BINARY_PATH}" "${download_url}"; then
         echo "Download failed. Please check your internet connection and try again." >&2
         exit 1
     fi
@@ -71,7 +70,7 @@ update_path() {
 
 list_dependencies() {
     echo "This script requires the following dependencies:"
-    echo "- curl: for downloading files and interacting with the GitHub API"
+    echo "- wget: for downloading files and interacting with the GitHub API"
     echo "- grep: for parsing command output"
     echo "- awk: for text processing"
     echo "Please ensure these are installed on your system."
@@ -79,7 +78,6 @@ list_dependencies() {
 
 main() {
     local is_fresh_install=true
-
     if command -v pulse &> /dev/null; then
         is_fresh_install=false
         echo "Existing pulse installation found. Checking for updates..."
@@ -87,7 +85,6 @@ main() {
             exit 0
         fi
     fi
-
     # Create the ~/.local/bin directory and add to $PATH if it's not there
     mkdir -p "${INSTALL_DIR}"
     
@@ -116,4 +113,3 @@ main() {
 }
 
 main "$@"
-

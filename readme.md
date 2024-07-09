@@ -16,7 +16,7 @@ Pulse Package Manager (PPM) is a comprehensive package manager designed specific
 #### Install Script (Recommended)
 Execute the script to install (or update if necessary) `pulse`.
 ```sh
-curl -sSL https://raw.githubusercontent.com/pulsepm/pulse/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/pulsepm/pulse/master/install.sh | bash -s
 ```
 
 ### Manual Installation
