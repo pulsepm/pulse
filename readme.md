@@ -234,6 +234,19 @@ Ensures all packages are present.
 #### Behavior:
 The `pulse ensure` command reads the packages specified in `project_folder/pulse.toml`, then copies them from the Pulse Package Configuration to `project_folder/requirements` (including plugins, dependencies, etc.). If any packages are not found, they are installed and automatically copied.
 
+## Uninstalling Pulse
+### Linux
+To uninstall Pulse and remove only the program binary, execute the following command in your terminal:
+```sh
+wget -qO- https://raw.githubusercontent.com/pulsepm/pulse/master/install.sh | bash -s -- --remove
+```
+
+To completely remove Pulse, including all associated configuration and cache directories, use the --remove-all option:
+```sh
+wget -qO- https://raw.githubusercontent.com/pulsepm/pulse/master/install.sh | bash -s -- --remove-all
+```
+The --remove-all option will delete all files and directories related to Pulse. Ensure you have backed up any important data before proceeding with this command.
+
 ## License
 
 Pulse Package Manager is licensed under the [MIT License](LICENSE).
