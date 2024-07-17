@@ -232,14 +232,21 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
     cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
-
+           
     if archive.endswith(".zip"):
         with ZipFile(archive) as zf:
             for archive_file in zf.namelist():
+                if not re.match(required_plugin[0], archive_file):
+                    continue
+
                 with zf.open(archive_file) as af:
-                    if re.match(required_plugin[0], af.name):
-                        zf.extract(af.name, cwd_path)
-                        break
+                    file_content = af.read()
+                
+                plugin_filename = os.path.basename(archive_file)
+                target_path = os.path.join(cwd_path, plugin_filename)
+                with open(target_path, 'wb') as target:
+                    target.write(file_content)
+                break
 
     if archive.endswith(".tar.gz"):
         with tarfile.open(archive, "r:gz") as tf:

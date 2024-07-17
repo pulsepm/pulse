@@ -204,17 +204,18 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
 
     if archive.string.endswith(".zip"):
         with ZipFile(archive_path) as zf:
-            zf.extractall(os.path.join(plugin_path, "tmp"))
-           # required_plugin[0] = archive.string.rstrip(".zip")
-            try:
-                tmp_path = os.path.join(plugin_path, "tmp", required_plugin[0])
-                print(tmp_path)
-                for file in os.listdir(tmp_path):
-                    print(f"Files: {file}")
-
-            except OSError as e:
-                print(f"Os error happend {e}")
+            for archive_file in zf.namelist():
+                if not re.match(required_plugin[0], archive_file):
+                    continue
                 
+                with zf.open(archive_file) as af:
+                    file_content = af.read()
+                
+                plugin_filename = os.path.basename(archive_file)
+                target_path = os.path.join(cwd_path, plugin_filename)
+                with open(target_path, 'wb') as target:
+                    target.write(file_content)
+                break
 
     if archive.string.endswith(".tar.gz"):
         with tarfile.open(archive_path, "r:gz") as tf:
