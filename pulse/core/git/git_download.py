@@ -206,8 +206,8 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
 
 def download_resource(origin_path, resource: tuple[str], package_type: Literal["sampctl", "pulse"]) -> None:
     owner, repo, release = resource
-    path = os.path.join(PLUGINS_PATH, owner, repo)
-    os.makedirs(path, exist_ok=True)
+    cached_plugin_path = os.path.join(PLUGINS_PATH, owner, repo)
+    os.makedirs(cached_plugin_path, exist_ok=True)
 
     request = requests.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest")
     response = request.json()
@@ -216,22 +216,27 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
         if re.match(release, asset["name"]):
             download_url = asset["browser_download_url"]
             r = requests.get(download_url)
-            archive = os.path.join(path, asset["name"])
+            archive = os.path.join(cached_plugin_path, asset["name"])
             with open(archive, "wb") as f:
                 f.write(r.content)
             break
 
     print(
-        f"Installed resource: {asset['name']} in {path}"
+        f"Installed resource: {asset['name']} in {cached_plugin_path}"
     )
-    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
-    if not required_plugin:
-        return print("Plugins not found")
-
-
+    
     cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
+
+    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
+    if not required_plugin and not (asset['name'].endswith(".so") or asset['name'].endswith(".dll")):
+        return print("Plugins not found")
+    
+    if asset['name'].endswith(".so") or asset['name'].endswith(".dll"):
+        source_path = os.path.join(cached_plugin_path, asset['name'])
+        target_path = os.path.join(cwd_path, asset['name'])
+        shutil.copy(source_path, target_path)
            
     if archive.endswith(".zip"):
         with ZipFile(archive) as zf:

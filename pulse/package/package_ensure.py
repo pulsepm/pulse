@@ -171,36 +171,31 @@ def contains_folders(path):
     return ret, print(f"CONTAINS {path}") if ret else print(f"NO CONTAIN {path}")
 
 def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pulse", "sampctl"]) -> None:
-   # print("PLUGINSS " + plugins)
-    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
-    print(f"\nrequired_plugin: {required_plugin}")
-    print(f"origin_path: {origin_path}")
     plugin_path = os.path.join(PLUGINS_PATH, resource[0], resource[1])
-    print(f"plugin_path: {plugin_path}")
-    print(f"Resource {resource}")
+    file_name = resource[2]
     
-    if not required_plugin:
-        return
-
-    for file in os.listdir(plugin_path):
-        print(f"FILES {file}")
-        archive = re.match(resource[2], file)
-#        print("ARCH "  + archive.string)
-        if archive:
-            break
-
     cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
 
-    print("REQ1 " + required_plugin[0])
+    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
+    if not required_plugin and not (file_name.endswith(".so") or file_name.endswith(".dll")):
+        return
 
-    print("")
+    if file_name.endswith(".so") or file_name.endswith(".dll"):
+        source_path = os.path.join(plugin_path, file_name)
+        target_path = os.path.join(cwd_path, file_name)
+        shutil.copy(source_path, target_path)
+    
+    if not required_plugin:
+        return
+    
+    for file in os.listdir(plugin_path):
+        print(f"FILES {file}")
+        archive = re.match(resource[2], file)
+        if archive:
+            break
     archive_path = os.path.join(plugin_path, archive.string)
-    print(f"archive.string: {archive.string}")
-    print(f"archive_path: {archive_path}")
-    print(f"cwd_path: {cwd_path}")
-    print("")
 
     if archive.string.endswith(".zip"):
         with ZipFile(archive_path) as zf:
