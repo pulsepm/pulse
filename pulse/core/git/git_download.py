@@ -228,7 +228,8 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
     if not required_plugin:
         return print("Plugins not found")
 
-    cwd_path = REQUIREMENTS_PATH if "plugins/" in required_plugin[0] else os.path.join(REQUIREMENTS_PATH, "plugins")
+
+    cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
 
@@ -236,13 +237,14 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
         with ZipFile(archive) as zf:
             for archive_file in zf.namelist():
                 with zf.open(archive_file) as af:
-                    if re.match(required_plugin[0], af.name):
+                    if re.match(regex_match.group(1), af.name):
                         zf.extract(af.name, cwd_path)
                         break
 
     if archive.endswith(".tar.gz"):
         with tarfile.open(archive, "r:gz") as tf:
             for archive_file in tf.getnames():
-                if re.match(required_plugin[0], archive_file):
+                if re.match(regex_match.group(1), archive_file):
                     tf.extract(archive_file, cwd_path)
                     break
+                

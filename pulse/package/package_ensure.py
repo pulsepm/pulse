@@ -112,8 +112,8 @@ def ensure_dependencies(dependencies: list[str]) -> None:
 
             dependency.append(branch)
 
-        default_path = os.path.join(str(PACKAGE_PATH), str(dependency[0]), str(dependency[1]), str(dependency[2]))
-        dependency_path = os.path.join(str(REQUIREMENTS_PATH), str(dependency[1]))
+        default_path = os.path.join(PACKAGE_PATH, dependency[0], dependency[1], dependency[2])
+        dependency_path = os.path.join(REQUIREMENTS_PATH, dependency[1])
         if os.path.exists(dependency_path):
             print(f"Found installed dependency: {dependency[0]}/{dependency[1]}..")
             continue
@@ -163,29 +163,50 @@ def ensure_dependencies(dependencies: list[str]) -> None:
         click.echo(f"Migrated {dependency[0]}/{dependency[1]} ({dependency[2]})..")
 
 
+def contains_folders(path):
+    # Regex to match any folder pattern (one or more characters followed by a "/")
+    pattern = re.compile(r'[^/]+/')
+    # Check if the string contains any folder pattern
+    ret =  bool(pattern.search(path))
+    return ret, print(f"CONTAINS {path}") if ret else print(f"NO CONTAIN {path}")
+
 def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pulse", "sampctl"]) -> None:
+   # print("PLUGINSS " + plugins)
     required_plugin = git_get.get_resource_plugins(origin_path, package_type)
+    print("REQ" + origin_path, required_plugin)
     plugin_path = os.path.join(PLUGINS_PATH, resource[0], resource[1])
+    print(f"Resource {resource}")
     if not required_plugin:
         return
 
     for file in os.listdir(plugin_path):
+        print(f"FILES {file}")
         archive = re.match(resource[2], file)
+#        print("ARCH "  + archive.string)
         if archive:
             break
 
-    cwd_path = REQUIREMENTS_PATH if "plugins/" in required_plugin[0] else os.path.join(REQUIREMENTS_PATH, "plugins")
+    cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
 
+    print("REQ1 " + required_plugin[0])
+
     archive_path = os.path.join(plugin_path, archive.string)
+    print(archive.string)
     if archive.string.endswith(".zip"):
         with ZipFile(archive_path) as zf:
-            for archive_file in zf.namelist():
-                with zf.open(archive_file) as af:
-                    if re.match(required_plugin[0], af.name):
-                        zf.extract(af.name, cwd_path)
-                        break
+            zf.extractall(os.path.join(plugin_path, "tmp"))
+           # required_plugin[0] = archive.string.rstrip(".zip")
+            try:
+                tmp_path = os.path.join(plugin_path, "tmp", required_plugin[0])
+                print(tmp_path)
+                for file in os.listdir(tmp_path):
+                    print(f"Files: {file}")
+
+            except OSError as e:
+                print(f"Os error happend {e}")
+                
 
     if archive.string.endswith(".tar.gz"):
         with tarfile.open(archive_path, "r:gz") as tf:
@@ -193,6 +214,9 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
                 if re.match(required_plugin[0], archive_file):
                     tf.extract(archive_file, cwd_path)
                     break
+
+    if archive.string.endswith(".dll" or ".so"):
+        shutil.copy(archive_path, os.path.join(cwd_path, "plugins"))
 
 
 def get_pulse_requirements(path) -> dict[str] | bool:
@@ -206,7 +230,7 @@ def get_pulse_requirements(path) -> dict[str] | bool:
 
 
 def is_package_installed(owner: str, repo: str, version: str) -> bool:
-    package_path = os.path.join(PACKAGE_PATH, str(owner), str(repo), str(version))
+    package_path = os.path.join(PACKAGE_PATH, owner, repo, version)
     if os.path.exists(package_path):
         return True
 

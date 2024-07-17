@@ -140,7 +140,7 @@ def get_resource_plugins(directory, package_type: Literal["pulse", "sampctl"]) -
 
         else:
             index: int = 0 if resource["resources"][0]["platform"] == system().lower() else 1
-            return resource["resources"][index]["plugins"]
+            return resource["resources"][index]["plugins"] if resource["resources"][index]["archive"] is True else resource["resources"][index]["name"]
 
     except:
         return None

@@ -27,6 +27,7 @@ PLUGINS_PATH = os.path.join(data_dir, "plugins")
 # CWD
 REQUIREMENTS_PATH = os.path.join(os.getcwd(), "requirements")
 PODS_PATH = os.path.join(os.getcwd(), ".pods")
+PROJECT_TOML_FILE = os.path.join(os.getcwd(), "pulse.toml")
 
 def safe_open(p: str, mode: str) -> IO:
     try:
