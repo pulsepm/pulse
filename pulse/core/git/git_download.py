@@ -237,14 +237,18 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
         with ZipFile(archive) as zf:
             for archive_file in zf.namelist():
                 with zf.open(archive_file) as af:
-                    if re.match(regex_match.group(1), af.name):
+                    if re.match(required_plugin[0], af.name):
                         zf.extract(af.name, cwd_path)
                         break
 
     if archive.endswith(".tar.gz"):
         with tarfile.open(archive, "r:gz") as tf:
             for archive_file in tf.getnames():
-                if re.match(regex_match.group(1), archive_file):
-                    tf.extract(archive_file, cwd_path)
-                    break
+                if not re.match(required_plugin[0], archive_file):
+                    continue
                 
+                plugin_filename = os.path.basename(archive_file)
+                member = tf.getmember(archive_file)
+                member.name = plugin_filename
+                tf.extract(member, cwd_path)
+                break

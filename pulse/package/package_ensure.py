@@ -173,9 +173,12 @@ def contains_folders(path):
 def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pulse", "sampctl"]) -> None:
    # print("PLUGINSS " + plugins)
     required_plugin = git_get.get_resource_plugins(origin_path, package_type)
-    print("REQ" + origin_path, required_plugin)
+    print(f"\nrequired_plugin: {required_plugin}")
+    print(f"origin_path: {origin_path}")
     plugin_path = os.path.join(PLUGINS_PATH, resource[0], resource[1])
+    print(f"plugin_path: {plugin_path}")
     print(f"Resource {resource}")
+    
     if not required_plugin:
         return
 
@@ -192,8 +195,13 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
 
     print("REQ1 " + required_plugin[0])
 
+    print("")
     archive_path = os.path.join(plugin_path, archive.string)
-    print(archive.string)
+    print(f"archive.string: {archive.string}")
+    print(f"archive_path: {archive_path}")
+    print(f"cwd_path: {cwd_path}")
+    print("")
+
     if archive.string.endswith(".zip"):
         with ZipFile(archive_path) as zf:
             zf.extractall(os.path.join(plugin_path, "tmp"))
@@ -211,13 +219,14 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
     if archive.string.endswith(".tar.gz"):
         with tarfile.open(archive_path, "r:gz") as tf:
             for archive_file in tf.getnames():
-                if re.match(required_plugin[0], archive_file):
-                    tf.extract(archive_file, cwd_path)
-                    break
-
-    if archive.string.endswith(".dll" or ".so"):
-        shutil.copy(archive_path, os.path.join(cwd_path, "plugins"))
-
+                if not re.match(required_plugin[0], archive_file):
+                    continue
+                
+                plugin_filename = os.path.basename(archive_file)
+                member = tf.getmember(archive_file)
+                member.name = plugin_filename
+                tf.extract(member, cwd_path)
+                break
 
 def get_pulse_requirements(path) -> dict[str] | bool:
     with open(path, mode="rb") as f:
