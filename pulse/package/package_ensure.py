@@ -5,11 +5,12 @@ from zipfile import ZipFile
 import click
 import re
 import tomli
-from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH
+from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH, safe_open
 import pulse.core.git.git_download as git_download
 import pulse.core.git.git_get as git_get
 import pulse.package.package_utils as package_utils
 import shutil
+
 
 
 @click.command
@@ -171,54 +172,66 @@ def contains_folders(path):
     return ret, print(f"CONTAINS {path}") if ret else print(f"NO CONTAIN {path}")
 
 def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pulse", "sampctl"]) -> None:
-   # print("PLUGINSS " + plugins)
-    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
-    print(f"\nrequired_plugin: {required_plugin}")
-    print(f"origin_path: {origin_path}")
     plugin_path = os.path.join(PLUGINS_PATH, resource[0], resource[1])
-    print(f"plugin_path: {plugin_path}")
-    print(f"Resource {resource}")
+    file_name = resource[2]
+    cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
+    if not os.path.exists(cwd_path):
+        os.makedirs(cwd_path)  
+
+    includes = git_get.get_resource_includes(origin_path, package_type)
+    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
+    if not required_plugin and not (file_name.endswith(".so") or file_name.endswith(".dll")):
+        return
+
+    if file_name.endswith(".so") or file_name.endswith(".dll"):
+        source_path = os.path.join(plugin_path, file_name)
+        target_path = os.path.join(cwd_path, file_name)
+        shutil.copy(source_path, target_path)
     
     if not required_plugin:
         return
-
+    
     for file in os.listdir(plugin_path):
-        print(f"FILES {file}")
         archive = re.match(resource[2], file)
-#        print("ARCH "  + archive.string)
         if archive:
             break
 
-    cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
-    if not os.path.exists(cwd_path):
-        os.makedirs(cwd_path)
-
-    print("REQ1 " + required_plugin[0])
-
-    print("")
     archive_path = os.path.join(plugin_path, archive.string)
-    print(f"archive.string: {archive.string}")
-    print(f"archive_path: {archive_path}")
-    print(f"cwd_path: {cwd_path}")
-    print("")
 
     if archive.string.endswith(".zip"):
         with ZipFile(archive_path) as zf:
-            zf.extractall(os.path.join(plugin_path, "tmp"))
-           # required_plugin[0] = archive.string.rstrip(".zip")
-            try:
-                tmp_path = os.path.join(plugin_path, "tmp", required_plugin[0])
-                print(tmp_path)
-                for file in os.listdir(tmp_path):
-                    print(f"Files: {file}")
+            for archive_file in zf.namelist():
+                if includes:
+                    os.makedirs(res_path := os.path.join(REQUIREMENTS_PATH, ".resources"), exist_ok=True)
+                    if re.match(includes[0], archive_file) and not archive_file.endswith(".dll"):
+                        os.makedirs(inc := os.path.join(res_path, resource[1]), exist_ok=True)
+                        zf.extract(archive_file, inc)
+                    else:
+                        continue
 
-            except OSError as e:
-                print(f"Os error happend {e}")
+                if not re.match(required_plugin[0], archive_file):
+                    continue
+
+                with zf.open(archive_file) as af:
+                    file_content = af.read()
                 
-
+                plugin_filename = os.path.basename(archive_file)
+                target_path = os.path.join(cwd_path, plugin_filename)
+                with open(target_path, 'wb') as target:
+                    target.write(file_content)
+                break
+            
     if archive.string.endswith(".tar.gz"):
         with tarfile.open(archive_path, "r:gz") as tf:
             for archive_file in tf.getnames():
+                if includes:
+                    os.makedirs(res_path := os.path.join(REQUIREMENTS_PATH, ".resources"), exist_ok=True)
+                    if re.match(includes[0], archive_file) and not archive_file.endswith(".so"):
+                        os.makedirs(inc := os.path.join(res_path, resource[1]), exist_ok=True)
+                        tf.extract(archive_file, inc)
+                    else:
+                        continue
+
                 if not re.match(required_plugin[0], archive_file):
                     continue
                 
