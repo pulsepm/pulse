@@ -188,14 +188,18 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
         target_path = os.path.join(cwd_path, file_name)
         shutil.copy(source_path, target_path)
     
-    if not required_plugin:
+    cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
+    if not os.path.exists(cwd_path):
+        os.makedirs(cwd_path)
+
+    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
+    if not required_plugin and not (file_name.endswith(".so") or file_name.endswith(".dll")):
         return
     
     for file in os.listdir(plugin_path):
         archive = re.match(resource[2], file)
         if archive:
             break
-
     archive_path = os.path.join(plugin_path, archive.string)
 
     if archive.string.endswith(".zip"):
