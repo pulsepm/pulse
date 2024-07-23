@@ -5,8 +5,9 @@ import subprocess
 import shutil
 import re
 import json
+import tomli
 
-from pulse.core.core_dir import COMPILER_PATH
+from pulse.core.core_dir import COMPILER_PATH, REQUIREMENTS_PATH
 
 def compile(entry, output, version, options: list, modules: list, legacy: list, requirements: dict):
 
@@ -41,28 +42,31 @@ def compile(entry, output, version, options: list, modules: list, legacy: list, 
 
     # requirements scan and add dependencies
 
-    if requirements:
-        # list through toml requirements
-        print(requirements)
-        for key, items in requirements.items():
-            print(f"items: {items}")
+    if os.path.exists(REQUIREMENTS_PATH) and (reqs := os.listdir(REQUIREMENTS_PATH)):
+        for folder in reqs:
+            print(folder)
+            req_path = os.path.join(REQUIREMENTS_PATH, folder)
 
-            for item in items:
-                requirement = re.split(r'/|@|:|#', str(item))[1].split('/')[0]
-                print(f"requirement: {requirement}")
-
-            # append them by reading json if there's json field include_path otherwise just append root
-                if not f"-irequirements/{requirement}" in options:
-                    if os.path.exists(os.path.join("requirements", requirement, "pawn.json")):
-                        with open(os.path.join("requirements", requirement, "pawn.json"), 'r') as config:
-                            config_data = json.load(config)
-                            if "include_path" in config_data:
-                                options.append('-irequirements/'+f'{requirement}/'+f'{config_data["include_path"]}')
+            if os.path.isdir(req_path):
+                files = os.listdir(req_path)
+                for file in files:
+                    if file == ("pawn.json" or "pulse.toml"):
+                        file_path = os.path.join(req_path, file)
+                        print("AAAAA", file_path)
+                        with open(file_path, 'r') as c:
+                            data = json.load(c) if file == "pawn.json" else tomli.load(c)
+                            if "include_path" in data:
+                                options.append(f'-i{req_path}/{data["include_path"]}')
                             else:
-                                options.append('-irequirements/'+f'{requirement}')
+                                options.append(f'-i{req_path}')
 
-                    print(f"OPTIONS: {options}")
+            
 
+    
+    if os.path.exists(res := os.path.join("requirements", ".resources")) and (listx := os.listdir(res)):
+        print(listx)
+        for folder in listx:
+            options.append(f'-i{os.path.join(res, folder)}')
 
     print(f"Here goes options: {options}")
     # now everything is fine, let's fire building with the options
