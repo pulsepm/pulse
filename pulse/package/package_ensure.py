@@ -168,7 +168,7 @@ def contains_folders(path):
     # Regex to match any folder pattern (one or more characters followed by a "/")
     pattern = re.compile(r'[^/]+/')
     # Check if the string contains any folder pattern
-    ret = bool(pattern.search(path))
+    ret = ybool(pattern.search(path))
     return ret, print(f"CONTAINS {path}") if ret else print(f"NO CONTAIN {path}")
 
 def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pulse", "sampctl"]) -> None:
@@ -235,7 +235,9 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
                     os.makedirs(res_path := os.path.join(REQUIREMENTS_PATH, ".resources"), exist_ok=True)
                     if re.match(includes[0], archive_file) and not archive_file.endswith(".so"):
                         os.makedirs(inc := os.path.join(res_path, resource[1]), exist_ok=True)
-                        tf.extract(archive_file, inc)
+                        if not archive_file.endswith('/'):
+                            with tf.open(archive_file) as source, open(os.path.join(inc, os.path.basename(archive_file)), 'wb') as target:
+                                target.write(source.read())
                     else:
                         continue
 
