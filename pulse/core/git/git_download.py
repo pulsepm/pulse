@@ -272,7 +272,8 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                     os.makedirs(res_path := os.path.join(REQUIREMENTS_PATH, ".resources"), exist_ok=True)
                     if re.match(includes[0], archive_file) and not archive_file.endswith(".dll"):
                         os.makedirs(inc := os.path.join(res_path, resource[1]), exist_ok=True)
-                        tf.extract(archive_file, inc)
+                        with tf.open(archive_file) as source, open(os.path.join(inc, os.path.basename(archive_file)), 'wb') as target:
+                            target.write(source.read())
                     else:
                         continue
 
