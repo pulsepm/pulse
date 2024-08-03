@@ -181,7 +181,7 @@ def contains_folders(path):
     # Regex to match any folder pattern (one or more characters followed by a "/")
     pattern = re.compile(r'[^/]+/')
     # Check if the string contains any folder pattern
-    ret = ybool(pattern.search(path))
+    ret = bool(pattern.search(path))
     return ret, print(f"CONTAINS {path}") if ret else print(f"NO CONTAIN {path}")
 
 def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pulse", "sampctl"]) -> None:
