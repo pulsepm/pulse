@@ -134,7 +134,7 @@ def download_package(
     package_type.removeprefix("master-")
     
     if fallbackPackageFile:
-        gitrepo.git.hcheckout("master")
+        gitrepo.git.checkout("master")
 
     resource = git_get.get_package_resources(package_dir, package_type)
 
