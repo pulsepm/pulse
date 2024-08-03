@@ -88,7 +88,7 @@ def download_and_unzip_github_release(
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
 
-def gitpython_download(owner: str, repo: str, version: str, save_path, raw_syntax: str) -> None:
+def gitpython_download(owner: str, repo: str, version: str, save_path, raw_syntax: str) -> Repo:
     token_file = safe_open(CONFIG_FILE, 'rb')
     token_data = tomli.load(token_file)
     token = token_data["token"]
@@ -110,32 +110,42 @@ def gitpython_download(owner: str, repo: str, version: str, save_path, raw_synta
         git.checkout(version)
 
     else:
-        Repo.clone_from(
+        git_repo = Repo.clone_from(
             f"https://{{{token}}}@github.com/{owner}/{repo}.git",
             save_path,
             single_branch=True,
             branch=version,
         )
+    
+    return git_repo
 
 
 def download_package(
-    owner: str, repo: str, package_path: str, version: str, package_type: Literal["pulse", "sampctl"], raw_syntax: str
+    owner: str, repo: str, package_path: str, version: str, package_type: Literal["pulse", "sampctl", "master-pulse", "master-sampctl"], raw_syntax: str
 ) -> None:
     os.makedirs(package_path, exist_ok=True)
     package_dir = os.path.join(package_path, version)
     if os.path.exists(package_dir):
         shutil.rmtree(package_dir, onerror=package_utils.on_rm_error)
 
-    gitpython_download(owner, repo, version, package_dir, raw_syntax)
+    gitrepo = gitpython_download(owner, repo, version, package_dir, raw_syntax)
+
+    fallbackPackageFile = True if package_type.startswith("master-") else False
+    package_type.removeprefix("master-")
+    
+    if fallbackPackageFile:
+        gitrepo.git.hcheckout("master")
+
+    resource = git_get.get_package_resources(package_dir, package_type)
+
+    if resource:
+        print(f"Found resource for {owner}/{repo} ({package_type})!")
+        download_resource(package_dir, resource, package_type)
+    
     dependencies = git_get.get_requirements(package_dir, package_type)
     if dependencies:
         print(f"Found dependencies for {owner}/{repo} ({package_type})!")
         download_requirements(dependencies, package_type)
-
-    resource = git_get.get_package_resources(package_dir, package_type)
-    if resource:
-        print(f"Found resource for {owner}/{repo} ({package_type})!")
-        download_resource(package_dir, resource, package_type)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
     if os.path.exists(requirements):
@@ -266,22 +276,18 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                 break
 
     if archive.endswith(".tar.gz"):
+        def extract_member(tar_file, member_name, extract_path):
+            member = tar_file.getmember(member_name)
+            member.name = os.path.basename(member.name)
+            tar_file.extract(member, extract_path)
+        
         with tarfile.open(archive, "r:gz") as tf:
             for archive_file in tf.getnames():
-                if includes:
-                    os.makedirs(res_path := os.path.join(REQUIREMENTS_PATH, ".resources"), exist_ok=True)
-                    if re.match(includes[0], archive_file) and not archive_file.endswith(".dll"):
-                        os.makedirs(inc := os.path.join(res_path, resource[1]), exist_ok=True)
-                        with tf.open(archive_file) as source, open(os.path.join(inc, os.path.basename(archive_file)), 'wb') as target:
-                            target.write(source.read())
-                    else:
-                        continue
-
-                if not re.match(required_plugin[0], archive_file):
+                if includes and archive_file.endswith(".inc"):
+                    res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
+                    os.makedirs(res_path, exist_ok=True)
+                    extract_member(tf, archive_file, res_path)
                     continue
-                
-                plugin_filename = os.path.basename(archive_file)
-                member = tf.getmember(archive_file)
-                member.name = plugin_filename
-                tf.extract(member, cwd_path)
-                break
+
+                if re.match(required_plugin[0], archive_file):
+                    extract_member(tf, archive_file, cwd_path)

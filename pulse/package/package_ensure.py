@@ -60,10 +60,23 @@ def ensure_packages() -> None:
 
             package_type = package_utils.get_package_type(git_repo)
             if not package_type:
+                # Check if the pawn.json/pulse.toml has been made available after the release
                 click.echo(
-                    f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} is not Pulse / sampctl package!"
+                    f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} Attempting to check the post-release changes"
                 )
-                continue
+                git_repo = git_get.get_github_repo(
+                   re_package[0],
+                    re_package[1],
+                    re_package[2],
+                    False,
+                )
+                package_type = package_utils.get_package_type(git_repo)
+                
+                if not package_type:
+                    continue
+                
+                click.echo("Fallback has been found")
+                package_type = "master-" + package_type 
 
             click.echo(f"Installing: {re_package[0]}/{re_package[1]} ({re_package[2]})..")
             git_download.download_package(
