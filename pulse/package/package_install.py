@@ -30,10 +30,6 @@ def install(package: str) -> None:
             "Incorrect entry of the package name.\nExample of command: pulse install Author/Repo"
         )
 
-    package_path = os.path.join(PACKAGE_PATH, re_package[0], re_package[1])
-    if os.path.exists(package_path):
-        return click.echo(f"{re_package[0]}/{re_package[1]}'s already installed!")
-
     try:
         re_package[2]
     except:
@@ -42,6 +38,16 @@ def install(package: str) -> None:
             return package_utils.echo_retrieve_fail(re_package, branch)
 
         re_package.append(branch)
+
+    package_path = os.path.join(PACKAGE_PATH, re_package[0], re_package[1])
+    if os.path.exists(package_path):
+        package_utils.write_requirements(
+            re_package[0],
+            re_package[1],
+            package_utils.get_package_syntax(package),
+            re_package[2],
+        )
+        return click.echo(f"{re_package[0]}/{re_package[1]}'s already installed!")
 
     git_repo = git_get.get_github_repo(
         re_package[0],
