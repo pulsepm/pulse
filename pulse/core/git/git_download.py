@@ -252,16 +252,20 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
         shutil.copy(source_path, target_path)
            
     if archive.endswith(".zip"):
+        def extract_member(zip_file, member_name, extract_path):
+            base_name = os.path.basename(member_name)
+            with zip_file.open(member_name) as source_file:
+                destination = os.path.join(extract_path, base_name)
+                with open(destination, 'wb') as dest_file:
+                    dest_file.write(source_file.read())
+
         with ZipFile(archive) as zf:
             for archive_file in zf.namelist():
-                if includes:
-                    os.makedirs(res_path := os.path.join(REQUIREMENTS_PATH, ".resources"), exist_ok=True)
-                    if re.match(includes[0], archive_file) and not archive_file.endswith(".dll"):
-                        os.makedirs(inc := os.path.join(res_path, resource[1]), exist_ok=True)
-                        if not archive_file.endswith('/'):
-                            with zf.open(archive_file) as source, open(os.path.join(inc, os.path.basename(archive_file)), 'wb') as target:
-                                target.write(source.read())
-                    else:
+                if includes and archive_file.endswith(".inc"):
+                    if re.match(includes[0], archive_file):
+                        res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
+                        os.makedirs(res_path, exist_ok=True)
+                        extract_member(zf, archive_file, res_path)
                         continue
 
                 if files:
@@ -273,19 +277,10 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                             res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
                             os.makedirs(res_path, exist_ok=True)
                             print("MAde")
-                            extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
+                            extract_member(zf, archive_file, os.path.join(res_path, os.path.dirname(item)))
 
-                if not re.match(required_plugin[0], archive_file):
-                    continue
-
-                with zf.open(archive_file) as af:
-                    file_content = af.read()
-                
-                plugin_filename = os.path.basename(archive_file)
-                target_path = os.path.join(cwd_path, plugin_filename)
-                with open(target_path, 'wb') as target:
-                    target.write(file_content)
-                break
+                if re.match(required_plugin[0], archive_file):
+                    extract_member(tf, archive_file, cwd_path)
 
     if archive.endswith(".tar.gz"):
         def extract_member(tar_file, member_name, extract_path):
