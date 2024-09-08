@@ -241,6 +241,7 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
         os.makedirs(cwd_path)
 
     includes = git_get.get_resource_includes(origin_path, package_type)
+    files = git_get.get_resource_files(origin_path, package_type)
     required_plugin = git_get.get_resource_plugins(origin_path, package_type)
     if not required_plugin and not (asset['name'].endswith(".so") or asset['name'].endswith(".dll")):
         return print("Plugins not found")
@@ -262,6 +263,17 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                                 target.write(source.read())
                     else:
                         continue
+
+                if files:
+                    print(f"Hej {files}")
+                    
+                    for key, item in files.items():
+                        if re.match(key, archive_file):
+                            print(f"Match {key}, {archive_file}")
+                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
+                            os.makedirs(res_path, exist_ok=True)
+                            print("MAde")
+                            extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
 
                 if not re.match(required_plugin[0], archive_file):
                     continue
@@ -288,6 +300,18 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                     os.makedirs(res_path, exist_ok=True)
                     extract_member(tf, archive_file, res_path)
                     continue
+
+                if files:
+                    print(f"Hej {files}")
+                    
+                    for key, item in files.items():
+                        if re.match(key, archive_file):
+                            print(f"Match {key}, {archive_file}")
+                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
+                            os.makedirs(res_path, exist_ok=True)
+                            print("MAde")
+                            extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
+                     
 
                 if re.match(required_plugin[0], archive_file):
                     extract_member(tf, archive_file, cwd_path)

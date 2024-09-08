@@ -192,6 +192,11 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
         os.makedirs(cwd_path)  
 
     includes = git_get.get_resource_includes(origin_path, package_type)
+    files = git_get.get_resource_files(origin_path, package_type)
+    if files:
+        print("YES")
+    else:
+        print(f"NO, {resource[1]}")
     required_plugin = git_get.get_resource_plugins(origin_path, package_type)
     if not required_plugin and not (file_name.endswith(".so") or file_name.endswith(".dll")):
         return
@@ -229,6 +234,11 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
                     else:
                         continue
 
+                if files:
+                    print(f"FILES: {files}")
+
+                    
+
                 if not re.match(required_plugin[0], archive_file):
                     continue
 
@@ -242,26 +252,35 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
                 break
             
     if archive.string.endswith(".tar.gz"):
+        def extract_member(tar_file, member_name, extract_path):
+            member = tar_file.getmember(member_name)
+            member.name = os.path.basename(member.name)
+            tar_file.extract(member, extract_path)
+            
         with tarfile.open(archive_path, "r:gz") as tf:
             for archive_file in tf.getnames():
-                if includes:
-                    os.makedirs(res_path := os.path.join(REQUIREMENTS_PATH, ".resources"), exist_ok=True)
-                    if re.match(includes[0], archive_file) and not archive_file.endswith(".so"):
-                        os.makedirs(inc := os.path.join(res_path, resource[1]), exist_ok=True)
-                        if not archive_file.endswith('/'):
-                            with tf.open(archive_file) as source, open(os.path.join(inc, os.path.basename(archive_file)), 'wb') as target:
-                                target.write(source.read())
-                    else:
-                        continue
-
-                if not re.match(required_plugin[0], archive_file):
+                if includes and archive_file.endswith(".inc"):
+                    res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
+                    os.makedirs(res_path, exist_ok=True)
+                    extract_member(tf, archive_file, res_path)
                     continue
-                
-                plugin_filename = os.path.basename(archive_file)
-                member = tf.getmember(archive_file)
-                member.name = plugin_filename
-                tf.extract(member, cwd_path)
-                break
+
+                if files:
+                    print(f"Hej {files}")
+                    
+                    for key, item in files.items():
+                        print(f"CHECK {key}, {item}, {archive_file}")
+                        if re.match(key, archive_file):
+                            print(key, item)
+                            print(f"Match {key}, {archive_file}")
+                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
+                            os.makedirs(res_path, exist_ok=True)
+                            print("MAde")
+                            extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
+                     
+
+                if re.match(required_plugin[0], archive_file):
+                    extract_member(tf, archive_file, cwd_path)
 
 def get_pulse_requirements(path) -> dict[str] | bool:
     with open(path, mode="rb") as f:
