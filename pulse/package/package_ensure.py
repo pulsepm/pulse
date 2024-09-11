@@ -223,8 +223,10 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
     if archive.string.endswith(".zip"):
         def extract_member(zip_file, member_name, extract_path):
             base_name = os.path.basename(member_name)
+            
+            destination = os.path.join(extract_path, base_name)
+            os.makedirs(os.path.dirname(destination), exist_ok=True)
             with zip_file.open(member_name) as source_file:
-                destination = os.path.join(extract_path, base_name)
                 with open(destination, 'wb') as dest_file:
                     dest_file.write(source_file.read())
 

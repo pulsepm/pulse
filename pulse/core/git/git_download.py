@@ -254,8 +254,9 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
     if archive.endswith(".zip"):
         def extract_member(zip_file, member_name, extract_path):
             base_name = os.path.basename(member_name)
+            destination = os.path.join(extract_path, base_name)
+            os.makedirs(os.path.dirname(destination), exist_ok=True)
             with zip_file.open(member_name) as source_file:
-                destination = os.path.join(extract_path, base_name)
                 with open(destination, 'wb') as dest_file:
                     dest_file.write(source_file.read())
 
@@ -280,7 +281,7 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                             extract_member(zf, archive_file, os.path.join(res_path, os.path.dirname(item)))
 
                 if re.match(required_plugin[0], archive_file):
-                    extract_member(tf, archive_file, cwd_path)
+                    extract_member(zf, archive_file, cwd_path)
 
     if archive.endswith(".tar.gz"):
         def extract_member(tar_file, member_name, extract_path):
