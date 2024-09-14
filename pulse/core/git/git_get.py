@@ -5,6 +5,7 @@ import tomli
 import json
 import pulse.package.package_utils as package_utils
 from platform import system
+from ..core_dir import safe_open, CONFIG_FILE
 import re
 
 
@@ -57,7 +58,15 @@ def get_github_repo(
     if not syntax_type:
         url = f"https://api.github.com/repos/{author}/{repo}/contents"
 
-    response = requests.get(url)
+    token_file = safe_open(CONFIG_FILE, 'rb')
+    token_data = tomli.load(token_file)
+    token = token_data["token"]
+
+    headers = {
+        "Authorization": f"token {token}"
+    }
+
+    response = requests.get(url, headers=headers)
     if not response.ok:
         return response
 
@@ -65,10 +74,17 @@ def get_github_repo(
 
 
 def default_branch(package: list[str]) -> str | int:
+    token_file = safe_open(CONFIG_FILE, 'rb')
+    token_data = tomli.load(token_file)
+    token = token_data["token"]
+    
     url = f"https://api.github.com/repos/{package[0]}/{package[1]}"
-    response = requests.get(url)
+    headers = {
+        "Authorization": f"token {token}"
+    }
+    response = requests.get(url, headers=headers)
     if not response.ok:
-        return response.status_code
+        return response.json()
 
     return response.json()["default_branch"]
 
@@ -124,7 +140,63 @@ def get_resource_plugins(directory, package_type: Literal["pulse", "sampctl"]) -
 
         else:
             index: int = 0 if resource["resources"][0]["platform"] == system().lower() else 1
-            return resource["resources"][index]["plugins"]
+            return resource["resources"][index]["plugins"] if resource["resources"][index]["archive"] is True else resource["resources"][index]["name"]
 
     except:
         return None
+
+
+def get_resource_includes(directory, package_type: Literal["pulse", "sampctl"]) -> list[str] | None:
+    try:
+        with open(os.path.join(directory, "pulse.toml" if package_type == "pulse" else "pawn.json"), mode="rb" if package_type == "pulse" else "r") as f:
+            if package_type == "pulse":
+                resource = tomli.load(f)
+            else:
+                resource = json.load(f)
+
+        if package_type == "pulse":
+            return resource["resource"][system().lower()]["includes"]
+
+        else:
+            index: int = 0 if resource["resources"][0]["platform"] == system().lower() else 1
+            return resource["resources"][index]["includes"]
+
+    except:
+        return None
+
+
+def get_resource_repo(directory, package_type: Literal["pulse", "sampctl"]) -> str | None:
+    try:
+        with open(os.path.join(directory, "pulse.toml" if package_type == "pulse" else "pawn.json"), mode="rb" if package_type == "pulse" else "r") as f:
+            if package_type == "pulse":
+                resource = tomli.load(f)
+            else:
+                resource = json.load(f)
+
+        if package_type == "pulse":
+            return resource["project"]["repo"]
+
+        else:
+            return resource["repo"]
+
+    except:
+        return None 
+    
+
+def get_resource_files(directory, package_type: Literal["pulse", "sampctl"]):
+    try:
+        with open(os.path.join(directory, "pulse.toml" if package_type == "pulse" else "pawn.json"), mode="rb" if package_type == "pulse" else "r") as f:
+            if package_type == "pulse":
+                resource = tomli.load(f)
+            else:
+                resource = json.load(f)
+
+        if package_type == "pulse":
+            return resource["resource"][system().lower()]["files"]
+
+        else:
+            index: int = 0 if resource["resources"][0]["platform"] == system().lower() else 1
+            return resource["resources"][index]["files"]
+
+    except:
+        return None 

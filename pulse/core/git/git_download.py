@@ -2,11 +2,13 @@ import os
 import tarfile
 from zipfile import ZipFile
 from platform import system
-from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH
+from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH, safe_open, CONFIG_FILE
 from typing import Literal
 from git import Repo
+from pulse.core.git.git import valid_token
 
 import re
+import tomli
 import requests
 import pulse.core.git.git_get as git_get
 import pulse.package.package_utils as package_utils
@@ -86,45 +88,64 @@ def download_and_unzip_github_release(
         print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
 
 
-def gitpython_download(owner: str, repo: str, version: str, save_path, raw_syntax: str) -> None:
+def gitpython_download(owner: str, repo: str, version: str, save_path, raw_syntax: str) -> Repo:
+    token_file = safe_open(CONFIG_FILE, 'rb')
+    token_data = tomli.load(token_file)
+    token = token_data["token"]
+     
+    if valid_token(token):
+        print("VALID")
+    else:
+        print("INVALID")
     if "#" in raw_syntax:
         git_repo = Repo.clone_from(
-            f"https://github.com/{owner}/{repo}.git", save_path, single_branch=True
+            f"https://{{{token}}}@github.com/{owner}/{repo}.git", save_path, single_branch=True
         )
+        print(f"https://{{{token}}}@github.com/{owner}/{repo}.git")
         git_repo.head.reset(commit=version, index=True, working_tree=True)
 
     if ":" in raw_syntax:
-        git_repo = Repo.clone_from(f"https://github.com/{owner}/{repo}", save_path)
+        git_repo = Repo.clone_from(f"https://{{{token}}}@github.com/{owner}/{repo}", save_path)
         git = git_repo.git
         git.checkout(version)
 
     else:
-        Repo.clone_from(
-            f"https://github.com/{owner}/{repo}.git",
+        git_repo = Repo.clone_from(
+            f"https://{{{token}}}@github.com/{owner}/{repo}.git",
             save_path,
             single_branch=True,
             branch=version,
         )
+    
+    return git_repo
 
 
 def download_package(
-    owner: str, repo: str, package_path: str, version: str, package_type: Literal["pulse", "sampctl"], raw_syntax: str
+    owner: str, repo: str, package_path: str, version: str, package_type: Literal["pulse", "sampctl", "master-pulse", "master-sampctl"], raw_syntax: str
 ) -> None:
     os.makedirs(package_path, exist_ok=True)
     package_dir = os.path.join(package_path, version)
     if os.path.exists(package_dir):
         shutil.rmtree(package_dir, onerror=package_utils.on_rm_error)
 
-    gitpython_download(owner, repo, version, package_dir, raw_syntax)
+    gitrepo = gitpython_download(owner, repo, version, package_dir, raw_syntax)
+
+    fallbackPackageFile = True if package_type.startswith("master-") else False
+    package_type.removeprefix("master-")
+    
+    if fallbackPackageFile:
+        gitrepo.git.checkout("master")
+
+    resource = git_get.get_package_resources(package_dir, package_type)
+
+    if resource:
+        print(f"Found resource for {owner}/{repo} ({package_type})!")
+        download_resource(package_dir, resource, package_type)
+    
     dependencies = git_get.get_requirements(package_dir, package_type)
     if dependencies:
         print(f"Found dependencies for {owner}/{repo} ({package_type})!")
         download_requirements(dependencies, package_type)
-
-    resource = git_get.get_package_resources(package_dir, package_type)
-    if resource:
-        print(f"Found resource for {owner}/{repo} ({package_type})!")
-        download_resource(package_dir, resource, package_type)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
     if os.path.exists(requirements):
@@ -156,7 +177,7 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
             re_requirement.append(branch)
 
         pckg_path = os.path.join(
-            PACKAGE_PATH, re_requirement[0], re_requirement[1]
+            PACKAGE_PATH, str(re_requirement[0]), str(re_requirement[1])
         )
         if os.path.exists(pckg_path):
             print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
@@ -195,43 +216,94 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
 
 def download_resource(origin_path, resource: tuple[str], package_type: Literal["sampctl", "pulse"]) -> None:
     owner, repo, release = resource
-    path = os.path.join(PLUGINS_PATH, owner, repo)
-    os.makedirs(path)
+    cached_plugin_path = os.path.join(PLUGINS_PATH, owner, repo)
+    os.makedirs(cached_plugin_path, exist_ok=True)
 
     request = requests.get(f"https://api.github.com/repos/{owner}/{repo}/releases/latest")
     response = request.json()
     assets = response["assets"]
     for asset in assets:
+        print(release, asset["name"])
         if re.match(release, asset["name"]):
             download_url = asset["browser_download_url"]
             r = requests.get(download_url)
-            archive = os.path.join(path, asset["name"])
+            archive = os.path.join(cached_plugin_path, asset["name"])
             with open(archive, "wb") as f:
                 f.write(r.content)
             break
 
     print(
-        f"Installed resource: {asset['name']} in {path}"
+        f"Installed resource: {asset['name']} in {cached_plugin_path}"
     )
-    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
-    if not required_plugin:
-        return print("Plugins not found")
-
-    cwd_path = REQUIREMENTS_PATH if "plugins/" in required_plugin[0] else os.path.join(REQUIREMENTS_PATH, "plugins")
+    
+    cwd_path = os.path.join(REQUIREMENTS_PATH, "plugins")
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
 
+    includes = git_get.get_resource_includes(origin_path, package_type)
+    files = git_get.get_resource_files(origin_path, package_type)
+    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
+    if not required_plugin and not (asset['name'].endswith(".so") or asset['name'].endswith(".dll")):
+        return print("Plugins not found")
+    
+    if asset['name'].endswith(".so") or asset['name'].endswith(".dll"):
+        source_path = os.path.join(cached_plugin_path, asset['name'])
+        target_path = os.path.join(cwd_path, asset['name'])
+        shutil.copy(source_path, target_path)
+           
     if archive.endswith(".zip"):
+        def extract_member(zip_file, member_name, extract_path):
+            extract_path = extract_path.rstrip("\\")
+            base_name = os.path.basename(member_name)
+            destination = os.path.join(extract_path, base_name)
+            os.makedirs(os.path.dirname(destination), exist_ok=True)
+            with zip_file.open(member_name) as source_file:
+                with open(destination, 'wb') as dest_file:
+                    dest_file.write(source_file.read())
+
         with ZipFile(archive) as zf:
             for archive_file in zf.namelist():
-                with zf.open(archive_file) as af:
-                    if re.match(required_plugin[0], af.name):
-                        zf.extract(af.name, cwd_path)
-                        break
+                if includes and archive_file.endswith(".inc"):
+                    if re.match(includes[0], archive_file):
+                        res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
+                        os.makedirs(res_path, exist_ok=True)
+                        extract_member(zf, archive_file, res_path)
+                        continue
+
+                if files:
+                    print(f"Hej {files}")
+                    
+                    for key, item in files.items():
+                        if re.match(key, archive_file):
+                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
+                            os.makedirs(res_path, exist_ok=True)
+                            extract_member(zf, archive_file, os.path.join(res_path, os.path.dirname(item)))
+
+                if re.match(required_plugin[0], archive_file):
+                    extract_member(zf, archive_file, cwd_path)
 
     if archive.endswith(".tar.gz"):
+        def extract_member(tar_file, member_name, extract_path):
+            extract_path = extract_path.rstrip("\\")
+            member = tar_file.getmember(member_name)
+            member.name = os.path.basename(member.name)
+            tar_file.extract(member, extract_path)
+        
         with tarfile.open(archive, "r:gz") as tf:
             for archive_file in tf.getnames():
+                if includes and archive_file.endswith(".inc"):
+                    res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
+                    os.makedirs(res_path, exist_ok=True)
+                    extract_member(tf, archive_file, res_path)
+                    continue
+
+                if files:
+                    for key, item in files.items():
+                        if re.match(key, archive_file):
+                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
+                            os.makedirs(res_path, exist_ok=True)
+                            extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
+                     
+
                 if re.match(required_plugin[0], archive_file):
-                    tf.extract(archive_file, cwd_path)
-                    break
+                    extract_member(tf, archive_file, cwd_path)

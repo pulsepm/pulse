@@ -11,6 +11,7 @@ import logging
 import pulse.stroke.stroke as stroke
 import pulse.download.download as download
 from pulse.core.core_dir import RUNTIME_PATH, PODS_PATH, REQUIREMENTS_PATH
+from pulse.core.git.git_get import get_resource_files, get_resource_repo
 from pulse.package.package_ensure import ensure_packages
 from pulse.run.run_server import server
 
@@ -91,6 +92,28 @@ def run(ensure: bool) -> None:
 
         
         logging.info("Plugins has been moved succesfully.")
+
+    if os.path.exists(REQUIREMENTS_PATH) and (reqs := os.listdir(REQUIREMENTS_PATH)):
+        for folder in reqs:
+            req_path = os.path.join(REQUIREMENTS_PATH, folder)
+            res_path = os.path.join(REQUIREMENTS_PATH, ".resources")
+            print(req_path)
+            files = get_resource_files(req_path, "sampctl")
+            repo = get_resource_repo(req_path, "sampctl")
+            if files:
+                for file in files.values():
+                    print(req_path, file)
+                    resource = os.path.join(res_path, folder)
+                    dirname = os.path.dirname(file)
+                    print(dirname)
+                    if dirname:
+                        print("DIRNAME")
+                        os.makedirs(os.path.join(PODS_PATH, "runtime", dirname) if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], dirname), exist_ok=True)
+                        shutil.copy(os.path.join(resource, file), os.path.join(PODS_PATH, "runtime", dirname) if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], dirname))
+                    else:
+                        shutil.copy(os.path.join(resource, file), os.path.join(PODS_PATH, "runtime") if pods else os.path.join(RUNTIME_PATH, data['runtime']['version']))
+
+            
     
     config_convert(os.path.join(os.getcwd(), 'pulse.toml'), os.path.join(runtime_loc, "config.json"))
 

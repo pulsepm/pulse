@@ -4,7 +4,7 @@ import tomli
 
 def config_convert(toml_file_path: str, json_file_path: str):
     
-    with open(toml_file_path, 'r') as file:
+    with open(toml_file_path, 'rb') as file:
         config = tomli.load(file)
 
     config_profile = config.get('runtime', {})
