@@ -193,10 +193,7 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
 
     includes = git_get.get_resource_includes(origin_path, package_type)
     files = git_get.get_resource_files(origin_path, package_type)
-    if files:
-        print("YES")
-    else:
-        print(f"NO, {resource[1]}")
+
     required_plugin = git_get.get_resource_plugins(origin_path, package_type)
     if not required_plugin and not (file_name.endswith(".so") or file_name.endswith(".dll")):
         return
@@ -222,6 +219,7 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
 
     if archive.string.endswith(".zip"):
         def extract_member(zip_file, member_name, extract_path):
+            extract_path = extract_path.rstrip("\\")
             base_name = os.path.basename(member_name)
             
             destination = os.path.join(extract_path, base_name)
@@ -240,14 +238,11 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
                         continue
 
                 if files:
-                    print(f"Hej {files}")
                     
                     for key, item in files.items():
                         if re.match(key, archive_file):
-                            print(f"Match {key}, {archive_file}")
                             res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
                             os.makedirs(res_path, exist_ok=True)
-                            print("MAde")
                             extract_member(zf, archive_file, os.path.join(res_path, os.path.dirname(item)))
 
                 if re.match(required_plugin[0], archive_file):
@@ -255,6 +250,7 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
 
     if archive.string.endswith(".tar.gz"):
         def extract_member(tar_file, member_name, extract_path):
+            extract_path = extract_path.rstrip("\\")
             member = tar_file.getmember(member_name)
             member.name = os.path.basename(member.name)
             tar_file.extract(member, extract_path)
@@ -268,16 +264,11 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
                     continue
 
                 if files:
-                    print(f"Hej {files}")
                     
                     for key, item in files.items():
-                        print(f"CHECK {key}, {item}, {archive_file}")
                         if re.match(key, archive_file):
-                            print(key, item)
-                            print(f"Match {key}, {archive_file}")
                             res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
                             os.makedirs(res_path, exist_ok=True)
-                            print("MAde")
                             extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
                      
 

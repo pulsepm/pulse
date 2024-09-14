@@ -253,6 +253,7 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
            
     if archive.endswith(".zip"):
         def extract_member(zip_file, member_name, extract_path):
+            extract_path = extract_path.rstrip("\\")
             base_name = os.path.basename(member_name)
             destination = os.path.join(extract_path, base_name)
             os.makedirs(os.path.dirname(destination), exist_ok=True)
@@ -274,10 +275,8 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                     
                     for key, item in files.items():
                         if re.match(key, archive_file):
-                            print(f"Match {key}, {archive_file}")
                             res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
                             os.makedirs(res_path, exist_ok=True)
-                            print("MAde")
                             extract_member(zf, archive_file, os.path.join(res_path, os.path.dirname(item)))
 
                 if re.match(required_plugin[0], archive_file):
@@ -285,6 +284,7 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
 
     if archive.endswith(".tar.gz"):
         def extract_member(tar_file, member_name, extract_path):
+            extract_path = extract_path.rstrip("\\")
             member = tar_file.getmember(member_name)
             member.name = os.path.basename(member.name)
             tar_file.extract(member, extract_path)
@@ -298,14 +298,10 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                     continue
 
                 if files:
-                    print(f"Hej {files}")
-                    
                     for key, item in files.items():
                         if re.match(key, archive_file):
-                            print(f"Match {key}, {archive_file}")
                             res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
                             os.makedirs(res_path, exist_ok=True)
-                            print("MAde")
                             extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
                      
 
