@@ -39,7 +39,7 @@ def initialize(
         print(f"Fatal error: Folder {repo_name} already exists")
         return
 
-    git_clone.clone_github_repo("https://github.com/pulsepm/boilerplate", project_dir)
+    __initialize_boilerplate(project_dir)
     os.chdir(project_dir)
 
     compiler = download.get_compiler(False)
