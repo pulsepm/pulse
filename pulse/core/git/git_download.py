@@ -130,10 +130,10 @@ def download_package(
 
     gitrepo = gitpython_download(owner, repo, version, package_dir, raw_syntax)
 
-    fallbackPackageFile = True if package_type.startswith("master-") else False
+    fallback_package_file = True if package_type.startswith("master-") else False
     package_type.removeprefix("master-")
     
-    if fallbackPackageFile:
+    if fallback_package_file:
         gitrepo.git.checkout("master")
 
     resource = git_get.get_package_resources(package_dir, package_type)
