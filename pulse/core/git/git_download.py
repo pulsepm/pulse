@@ -6,6 +6,7 @@ from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH, s
 from typing import Literal
 from git import Repo
 from pulse.core.git.git import valid_token
+from pulse.package.unpack.unpack import extract_member
 
 import re
 import tomli
@@ -252,15 +253,6 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
         shutil.copy(source_path, target_path)
            
     if archive.endswith(".zip"):
-        def extract_member(zip_file, member_name, extract_path):
-            extract_path = extract_path.rstrip("\\")
-            base_name = os.path.basename(member_name)
-            destination = os.path.join(extract_path, base_name)
-            os.makedirs(os.path.dirname(destination), exist_ok=True)
-            with zip_file.open(member_name) as source_file:
-                with open(destination, 'wb') as dest_file:
-                    dest_file.write(source_file.read())
-
         with ZipFile(archive) as zf:
             for archive_file in zf.namelist():
                 if includes and archive_file.endswith(".inc"):
@@ -283,12 +275,6 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
                     extract_member(zf, archive_file, cwd_path)
 
     if archive.endswith(".tar.gz"):
-        def extract_member(tar_file, member_name, extract_path):
-            extract_path = extract_path.rstrip("\\")
-            member = tar_file.getmember(member_name)
-            member.name = os.path.basename(member.name)
-            tar_file.extract(member, extract_path)
-        
         with tarfile.open(archive, "r:gz") as tf:
             for archive_file in tf.getnames():
                 if includes and archive_file.endswith(".inc"):
