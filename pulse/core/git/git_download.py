@@ -7,6 +7,7 @@ from typing import Literal
 from git import Repo
 from pulse.core.git.git import valid_token
 from pulse.package.unpack.unpack import extract_member
+from pulse.package.package_handle import handle_extraction_zip, handle_extraction_tar
 
 import re
 import tomli
@@ -252,44 +253,8 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
         target_path = os.path.join(cwd_path, asset['name'])
         shutil.copy(source_path, target_path)
            
-    if archive.endswith(".zip"):
-        with ZipFile(archive) as zf:
-            for archive_file in zf.namelist():
-                if includes and archive_file.endswith(".inc"):
-                    if re.match(includes[0], archive_file):
-                        res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                        os.makedirs(res_path, exist_ok=True)
-                        extract_member(zf, archive_file, res_path)
-                        continue
+    if archive.string.endswith(".zip"):
+        handle_extraction_zip(archive_path, includes, resource, files, required_plugin)
 
-                if files:
-                    print(f"Hej {files}")
-                    
-                    for key, item in files.items():
-                        if re.match(key, archive_file):
-                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                            os.makedirs(res_path, exist_ok=True)
-                            extract_member(zf, archive_file, os.path.join(res_path, os.path.dirname(item)))
-
-                if re.match(required_plugin[0], archive_file):
-                    extract_member(zf, archive_file, cwd_path)
-
-    if archive.endswith(".tar.gz"):
-        with tarfile.open(archive, "r:gz") as tf:
-            for archive_file in tf.getnames():
-                if includes and archive_file.endswith(".inc"):
-                    res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                    os.makedirs(res_path, exist_ok=True)
-                    extract_member(tf, archive_file, res_path)
-                    continue
-
-                if files:
-                    for key, item in files.items():
-                        if re.match(key, archive_file):
-                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                            os.makedirs(res_path, exist_ok=True)
-                            extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
-                     
-
-                if re.match(required_plugin[0], archive_file):
-                    extract_member(tf, archive_file, cwd_path)
+    if archive.string.endswith(".tar.gz"):
+        handle_extraction_tar(archive_path, includes, resource, files, required_plugin)
