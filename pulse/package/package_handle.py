@@ -25,7 +25,7 @@ def handle_extraction_zip(archive_path, includes, resource, files, required_plug
             if re.match(required_plugin[0], archive_file):
                 extract_member(zf, archive_file, cwd_path)
 
-def handle_extraction_tar(archive_path, includes, resources, files, required_plugin, cwd_path=os.path.join(REQUIREMENTS_PATH, "plugins")):
+def handle_extraction_tar(archive_path, includes, resource, files, required_plugin, cwd_path=os.path.join(REQUIREMENTS_PATH, "plugins")):
     with tarfile.open(archive_path, "r:gz") as tf:
         for archive_file in tf.getnames():
             if includes and archive_file.endswith(".inc"):
