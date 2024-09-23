@@ -253,8 +253,8 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
         target_path = os.path.join(cwd_path, asset['name'])
         shutil.copy(source_path, target_path)
            
-    if archive.string.endswith(".zip"):
-        handle_extraction_zip(archive_path, includes, resource, files, required_plugin)
+    if archive.endswith(".zip"):
+        handle_extraction_zip(archive, includes, resource, files, required_plugin)
 
-    if archive.string.endswith(".tar.gz"):
-        handle_extraction_tar(archive_path, includes, resource, files, required_plugin)
+    if archive.endswith(".tar.gz"):
+        handle_extraction_tar(archive, includes, resource, files, required_plugin)
