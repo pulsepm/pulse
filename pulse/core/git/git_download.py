@@ -6,6 +6,8 @@ from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH, s
 from typing import Literal
 from git import Repo
 from pulse.core.git.git import valid_token
+from pulse.package.unpack.unpack import extract_member
+from pulse.package.package_handle import handle_extraction_zip, handle_extraction_tar
 
 import re
 import tomli
@@ -130,10 +132,10 @@ def download_package(
 
     gitrepo = gitpython_download(owner, repo, version, package_dir, raw_syntax)
 
-    fallbackPackageFile = True if package_type.startswith("master-") else False
+    fallback_package_file = True if package_type.startswith("master-") else False
     package_type.removeprefix("master-")
     
-    if fallbackPackageFile:
+    if fallback_package_file:
         gitrepo.git.checkout("master")
 
     resource = git_get.get_package_resources(package_dir, package_type)
@@ -252,58 +254,7 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
         shutil.copy(source_path, target_path)
            
     if archive.endswith(".zip"):
-        def extract_member(zip_file, member_name, extract_path):
-            extract_path = extract_path.rstrip("\\")
-            base_name = os.path.basename(member_name)
-            destination = os.path.join(extract_path, base_name)
-            os.makedirs(os.path.dirname(destination), exist_ok=True)
-            with zip_file.open(member_name) as source_file:
-                with open(destination, 'wb') as dest_file:
-                    dest_file.write(source_file.read())
-
-        with ZipFile(archive) as zf:
-            for archive_file in zf.namelist():
-                if includes and archive_file.endswith(".inc"):
-                    if re.match(includes[0], archive_file):
-                        res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                        os.makedirs(res_path, exist_ok=True)
-                        extract_member(zf, archive_file, res_path)
-                        continue
-
-                if files:
-                    print(f"Hej {files}")
-                    
-                    for key, item in files.items():
-                        if re.match(key, archive_file):
-                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                            os.makedirs(res_path, exist_ok=True)
-                            extract_member(zf, archive_file, os.path.join(res_path, os.path.dirname(item)))
-
-                if re.match(required_plugin[0], archive_file):
-                    extract_member(zf, archive_file, cwd_path)
+        handle_extraction_zip(archive, includes, resource, files, required_plugin)
 
     if archive.endswith(".tar.gz"):
-        def extract_member(tar_file, member_name, extract_path):
-            extract_path = extract_path.rstrip("\\")
-            member = tar_file.getmember(member_name)
-            member.name = os.path.basename(member.name)
-            tar_file.extract(member, extract_path)
-        
-        with tarfile.open(archive, "r:gz") as tf:
-            for archive_file in tf.getnames():
-                if includes and archive_file.endswith(".inc"):
-                    res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                    os.makedirs(res_path, exist_ok=True)
-                    extract_member(tf, archive_file, res_path)
-                    continue
-
-                if files:
-                    for key, item in files.items():
-                        if re.match(key, archive_file):
-                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                            os.makedirs(res_path, exist_ok=True)
-                            extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
-                     
-
-                if re.match(required_plugin[0], archive_file):
-                    extract_member(tf, archive_file, cwd_path)
+        handle_extraction_tar(archive, includes, resource, files, required_plugin)

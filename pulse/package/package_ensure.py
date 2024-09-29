@@ -10,6 +10,8 @@ import pulse.core.git.git_download as git_download
 import pulse.core.git.git_get as git_get
 import pulse.package.package_utils as package_utils
 import shutil
+from pulse.package.unpack.unpack import extract_member
+from pulse.package.package_handle import handle_extraction_zip, handle_extraction_tar
 
 
 
@@ -177,13 +179,6 @@ def ensure_dependencies(dependencies: list[str]) -> None:
         click.echo(f"Migrated {dependency[0]}/{dependency[1]} ({dependency[2]})..")
 
 
-def contains_folders(path):
-    # Regex to match any folder pattern (one or more characters followed by a "/")
-    pattern = re.compile(r'[^/]+/')
-    # Check if the string contains any folder pattern
-    ret = bool(pattern.search(path))
-    return ret, print(f"CONTAINS {path}") if ret else print(f"NO CONTAIN {path}")
-
 def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pulse", "sampctl"]) -> None:
     plugin_path = os.path.join(PLUGINS_PATH, resource[0], resource[1])
     file_name = resource[2]
@@ -218,62 +213,10 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
     archive_path = os.path.join(plugin_path, archive.string)
 
     if archive.string.endswith(".zip"):
-        def extract_member(zip_file, member_name, extract_path):
-            extract_path = extract_path.rstrip("\\")
-            base_name = os.path.basename(member_name)
-            
-            destination = os.path.join(extract_path, base_name)
-            os.makedirs(os.path.dirname(destination), exist_ok=True)
-            with zip_file.open(member_name) as source_file:
-                with open(destination, 'wb') as dest_file:
-                    dest_file.write(source_file.read())
-
-        with ZipFile(archive_path) as zf:
-            for archive_file in zf.namelist():
-                if includes and archive_file.endswith(".inc"):
-                    if re.match(includes[0], archive_file):
-                        res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                        os.makedirs(res_path, exist_ok=True)
-                        extract_member(zf, archive_file, res_path)
-                        continue
-
-                if files:
-                    
-                    for key, item in files.items():
-                        if re.match(key, archive_file):
-                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                            os.makedirs(res_path, exist_ok=True)
-                            extract_member(zf, archive_file, os.path.join(res_path, os.path.dirname(item)))
-
-                if re.match(required_plugin[0], archive_file):
-                    extract_member(zf, archive_file, cwd_path)
+        handle_extraction_zip(archive_path, includes, resource, files, required_plugin)
 
     if archive.string.endswith(".tar.gz"):
-        def extract_member(tar_file, member_name, extract_path):
-            extract_path = extract_path.rstrip("\\")
-            member = tar_file.getmember(member_name)
-            member.name = os.path.basename(member.name)
-            tar_file.extract(member, extract_path)
-            
-        with tarfile.open(archive_path, "r:gz") as tf:
-            for archive_file in tf.getnames():
-                if includes and archive_file.endswith(".inc"):
-                    res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                    os.makedirs(res_path, exist_ok=True)
-                    extract_member(tf, archive_file, res_path)
-                    continue
-
-                if files:
-                    
-                    for key, item in files.items():
-                        if re.match(key, archive_file):
-                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                            os.makedirs(res_path, exist_ok=True)
-                            extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
-                     
-
-                if re.match(required_plugin[0], archive_file):
-                    extract_member(tf, archive_file, cwd_path)
+        handle_extraction_tar(archive_path, includes, resource, files, required_plugin)
 
 def get_pulse_requirements(path) -> dict[str] | bool:
     with open(path, mode="rb") as f:
