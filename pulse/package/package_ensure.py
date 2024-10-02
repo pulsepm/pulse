@@ -208,15 +208,15 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
     
     for file in os.listdir(plugin_path):
         archive = re.match(resource[2], file)
-        if archive:
-            break
-    archive_path = os.path.join(plugin_path, archive.string)
+       # if archive:
+        #    break
+        archive_path = os.path.join(plugin_path, archive.string)
 
-    if archive.string.endswith(".zip"):
-        handle_extraction_zip(archive_path, includes, resource, files, required_plugin)
+        if archive.string.endswith(".zip"):
+            handle_extraction_zip(archive_path, includes, resource, files, required_plugin)
 
-    if archive.string.endswith(".tar.gz"):
-        handle_extraction_tar(archive_path, includes, resource, files, required_plugin)
+        if archive.string.endswith(".tar.gz"):
+            handle_extraction_tar(archive_path, includes, resource, files, required_plugin)
 
 def get_pulse_requirements(path) -> dict[str] | bool:
     with open(path, mode="rb") as f:
