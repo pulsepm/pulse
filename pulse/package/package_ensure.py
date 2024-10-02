@@ -12,6 +12,7 @@ import pulse.package.package_utils as package_utils
 import shutil
 from pulse.package.unpack.unpack import extract_member
 from pulse.package.package_handle import handle_extraction_zip, handle_extraction_tar
+from concurrent.futures import ThreadPoolExecutor
 
 
 
@@ -33,6 +34,8 @@ def ensure_packages() -> None:
         return click.echo("No requirements were found in pulse.toml..")
 
     click.echo(f'Found: {len(requirements)} requirements..')
+    pck_to_dwn = []
+    
     for requirement in requirements:
         re_package = re.split("/|@|:|#", requirement)
         try:
@@ -80,14 +83,8 @@ def ensure_packages() -> None:
                 click.echo("Fallback has been found")
                 package_type = "master-" + package_type 
 
-            click.echo(f"Installing: {re_package[0]}/{re_package[1]} ({re_package[2]})..")
-            git_download.download_package(
-                re_package[0],
-                re_package[1],
-                os.path.join(PACKAGE_PATH, re_package[0], re_package[1]),
-                re_package[2],
-                package_type,
-                requirement
+            pck_to_dwn.append(
+                [re_package[0], re_package[1], os.path.join(PACKAGE_PATH, re_package[0], re_package[1]), re_package[2], package_type, requirement]
             )
 
         else:
@@ -109,6 +106,28 @@ def ensure_packages() -> None:
             resource = git_get.get_package_resources(local_package_path, package_type)
             if resource:
                 ensure_resource(resource, local_package_path, package_type)
+    
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        click.echo(f"Installing the dependencies..")
+        futures = []
+        for package in pck_to_dwn:
+            # Unpack the list for the arguments of download_package
+            futures.append(executor.submit(git_download.download_package, *package))
+        
+        # Optionally wait for all tasks to complete and handle results
+        for future in futures:
+            try:
+                future.result()  # This will raise any exceptions that occurred in download_package
+            except ConnectionResetError as e:
+                print(f"Connection reset error on attempt {e}")
+           
+
+            except KeyError as e:
+                print(f"Key error encountered while processing: {e}")
+
+            except Exception as e:
+                print(f"An error occurred while downloading: {e}")
+                break  
 
 
 def ensure_dependencies(dependencies: list[str]) -> None:
@@ -208,15 +227,15 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
     
     for file in os.listdir(plugin_path):
         archive = re.match(resource[2], file)
-       # if archive:
-        #    break
-        archive_path = os.path.join(plugin_path, archive.string)
+        if archive:
+            break
+    archive_path = os.path.join(plugin_path, archive.string)
 
-        if archive.string.endswith(".zip"):
-            handle_extraction_zip(archive_path, includes, resource, files, required_plugin)
+    if archive.string.endswith(".zip"):
+        handle_extraction_zip(archive_path, includes, resource, files, required_plugin)
 
-        if archive.string.endswith(".tar.gz"):
-            handle_extraction_tar(archive_path, includes, resource, files, required_plugin)
+    if archive.string.endswith(".tar.gz"):
+        handle_extraction_tar(archive_path, includes, resource, files, required_plugin)
 
 def get_pulse_requirements(path) -> dict[str] | bool:
     with open(path, mode="rb") as f:

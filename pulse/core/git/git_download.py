@@ -94,6 +94,10 @@ def gitpython_download(owner: str, repo: str, version: str, save_path, raw_synta
     token_file = safe_open(CONFIG_FILE, 'rb')
     token_data = tomli.load(token_file)
     token = token_data["token"]
+    if os.path.exists(save_path):
+        print(f"Skipping '{repo}' as it has already been cloned to '{save_path}'.")
+        return Repo(save_path)  # Return the existing Repo object
+
      
     if valid_token(token):
         print("VALID")
