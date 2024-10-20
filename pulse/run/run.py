@@ -11,7 +11,7 @@ import logging
 import pulse.stroke.stroke as stroke
 import pulse.download.download as download
 from pulse.core.core_dir import RUNTIME_PATH, PODS_PATH, REQUIREMENTS_PATH
-from pulse.core.git.git_get import get_resource_files, get_resource_repo
+from ..package.content import get_resource_files, get_resource_repo
 from pulse.package.package_ensure import ensure_packages
 from pulse.run.run_server import server
 
