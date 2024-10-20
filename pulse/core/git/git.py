@@ -1,33 +1,10 @@
-from typing import Union
+from typing import Union, Literal
 import git
 import os
+import tomli
+from ..core_dir import safe_open, CONFIG_FILE
 
 import requests
-
-
-def check_github_repo_exists(username: str, repo_name: str) -> Union[bool, None]:
-    """
-    Checks if a GitHub repository exists for the given username and repository name.
-
-    Args:
-        username (str): The username of the repository owner.
-        repo_name (str): The name of the repository.
-
-    Returns:
-        Union[bool, None]: Returns True if the repository exists, False if it does not exist, or None if there was an issue checking the repository.
-    """
-    url = f"https://api.github.com/repos/{username}/{repo_name}"
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        print(f"The repository {username}/{repo_name} exists.")
-        return True
-    elif response.status_code == 404:
-        print(f"The repository {username}/{repo_name} does not exist.")
-        return False
-    else:
-        print(f"Failed to check the repository. Status code: {response.status_code}")
-        return None
 
 
 def create_repository(username: str, repository_name: str, access_token: str) -> None:
@@ -105,3 +82,46 @@ def valid_username(username: str) -> bool:
     elif response.status_code == 404:
         return False
     
+
+def get_github_repo(
+    author: str, repo: str, syntax: str, syntax_type: Literal["@", ":", "#"]
+) -> list | bool:
+    if syntax_type == "@" or syntax_type == "#":
+        url = f"https://api.github.com/repos/{author}/{repo}/git/trees/{syntax}"
+
+    if syntax_type == ":":
+        url = f"https://api.github.com/repos/{author}/{repo}/contents?ref={syntax}"
+
+    if not syntax_type:
+        url = f"https://api.github.com/repos/{author}/{repo}/contents"
+
+    token_file = safe_open(CONFIG_FILE, 'rb')
+    token_data = tomli.load(token_file)
+    token = token_data["token"]
+
+    headers = {
+        "Authorization": f"token {token}"
+    }
+
+    response = requests.get(url, headers=headers)
+    if not response.ok:
+        return response
+
+    return response.json()
+
+
+def default_branch(package: list[str]) -> str | int:
+    token_file = safe_open(CONFIG_FILE, 'rb')
+    token_data = tomli.load(token_file)
+    token = token_data["token"]
+    
+    url = f"https://api.github.com/repos/{package[0]}/{package[1]}"
+    headers = {
+        "Authorization": f"token {token}"
+    }
+    response = requests.get(url, headers=headers)
+    if not response.ok:
+        return response.json()
+
+    return response.json()["default_branch"]
+

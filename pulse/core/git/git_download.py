@@ -5,15 +5,15 @@ from platform import system
 from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH, safe_open, CONFIG_FILE
 from typing import Literal
 from git import Repo
-from pulse.core.git.git import valid_token
+from pulse.core.git.git import valid_token, default_branch
 from pulse.package.unpack.unpack import extract_member
 from pulse.package.package_handle import handle_extraction_zip, handle_extraction_tar
+from pulse.package.package_uninstall import on_rm_error
 
 import re
 import tomli
 import requests
-import pulse.core.git.git_get as git_get
-import pulse.package.package_utils as package_utils
+import pulse.package.content as content
 import shutil
 
 
@@ -94,9 +94,6 @@ def gitpython_download(owner: str, repo: str, version: str, save_path, raw_synta
     token_file = safe_open(CONFIG_FILE, 'rb')
     token_data = tomli.load(token_file)
     token = token_data["token"]
-    if os.path.exists(save_path):
-        print(f"Skipping '{repo}' as it has already been cloned to '{save_path}'.")
-        return Repo(save_path)  # Return the existing Repo object
 
      
     if valid_token(token):
@@ -132,7 +129,7 @@ def download_package(
     os.makedirs(package_path, exist_ok=True)
     package_dir = os.path.join(package_path, version)
     if os.path.exists(package_dir):
-        shutil.rmtree(package_dir, onerror=package_utils.on_rm_error)
+        shutil.rmtree(package_dir, onerror=on_rm_error)
 
     gitrepo = gitpython_download(owner, repo, version, package_dir, raw_syntax)
 
@@ -142,20 +139,20 @@ def download_package(
     if fallback_package_file:
         gitrepo.git.checkout("master")
 
-    resource = git_get.get_package_resources(package_dir, package_type)
+    resource = content.get_package_resources(package_dir, package_type)
 
     if resource:
         print(f"Found resource for {owner}/{repo} ({package_type})!")
         download_resource(package_dir, resource, package_type)
     
-    dependencies = git_get.get_requirements(package_dir, package_type)
+    dependencies = content.get_requirements(package_dir, package_type)
     if dependencies:
         print(f"Found dependencies for {owner}/{repo} ({package_type})!")
         download_requirements(dependencies, package_type)
 
     requirements = os.path.join(REQUIREMENTS_PATH, repo)
     if os.path.exists(requirements):
-        shutil.rmtree(requirements, onerror=package_utils.on_rm_error)
+        shutil.rmtree(requirements, onerror=on_rm_error)
 
     shutil.copytree(package_dir, requirements)
 
@@ -175,9 +172,9 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
         try:
             branch = re_requirement[2]
         except:
-            branch = git_get.default_branch(re_requirement)
+            branch = default_branch(re_requirement)
             if not branch:
-                package_utils.echo_retrieve_fail(re_requirement, branch)
+                content.echo_retrieve_fail(re_requirement, branch)
                 continue
 
             re_requirement.append(branch)
@@ -200,10 +197,10 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
         print(
             f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
         )
-        libs = git_get.get_requirements(pckg_path_version, package_type)
+        libs = content.get_requirements(pckg_path_version, package_type)
         save_path = os.path.join(REQUIREMENTS_PATH, re_requirement[1])
         if os.path.exists(save_path):
-            shutil.rmtree(save_path, onerror=package_utils.on_rm_error)
+            shutil.rmtree(save_path, onerror=on_rm_error)
 
         shutil.copytree(
             pckg_path_version, os.path.join(REQUIREMENTS_PATH, re_requirement[1])
@@ -214,7 +211,7 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
             )
             download_requirements(libs, package_type)
 
-        resource = git_get.get_package_resources(pckg_path_version, package_type)
+        resource = content.get_package_resources(pckg_path_version, package_type)
         if resource:
             print(f"Found resource for {re_requirement[0]}/{re_requirement[1]} ({package_type})!")
             download_resource(pckg_path_version, resource, package_type)
@@ -246,9 +243,9 @@ def download_resource(origin_path, resource: tuple[str], package_type: Literal["
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
 
-    includes = git_get.get_resource_includes(origin_path, package_type)
-    files = git_get.get_resource_files(origin_path, package_type)
-    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
+    includes = content.get_resource_includes(origin_path, package_type)
+    files = content.get_resource_files(origin_path, package_type)
+    required_plugin = content.get_resource_plugins(origin_path, package_type)
     if not required_plugin and not (asset['name'].endswith(".so") or asset['name'].endswith(".dll")):
         return print("Plugins not found")
     
