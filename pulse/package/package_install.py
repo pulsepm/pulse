@@ -6,8 +6,7 @@ from pulse.core.core_dir import PACKAGE_PATH
 from typing import Literal
 import git
 import pulse.core.git.git_download as git_download
-import pulse.core.git.git_get as git_get
-import pulse.package.package_utils as package_utils
+import pulse.core.git.git as git
 
 
 @click.command
@@ -33,7 +32,7 @@ def install(package: str) -> None:
     try:
         re_package[2]
     except:
-        branch = git_get.default_branch(re_package)
+        branch = git.default_branch(re_package)
         if not branch:
             return package_utils.echo_retrieve_fail(re_package, branch)
 
@@ -49,7 +48,7 @@ def install(package: str) -> None:
         )
         return click.echo(f"{re_package[0]}/{re_package[1]}'s already installed!")
 
-    git_repo = git_get.get_github_repo(
+    git_repo = git.get_github_repo(
         re_package[0],
         re_package[1],
         re_package[2],
@@ -72,7 +71,7 @@ def install(package: str) -> None:
         package_type,
         package
     )
-    package_utils.write_requirements(
+    write_requirements(
         re_package[0],
         re_package[1],
         package_utils.get_package_syntax(package),
@@ -81,3 +80,24 @@ def install(package: str) -> None:
     click.echo(
         f"Successfully installed library: {re_package[0]}/{re_package[1]} ({re_package[2]})!"
     )
+
+
+def write_requirements(owner: str, repo: str, sign: str, syntax: str) -> None:
+    package_name: str = f"{owner}/{repo}{sign}{syntax}"
+    toml_path = os.path.join(os.getcwd(), "pulse.toml")
+
+    if not os.path.exists(toml_path):
+        tmp_file = open(toml_path, mode="w")
+        tmp_file.close()
+
+    with open(toml_path, "rb") as file:
+        data = tomli.load(file)
+
+    if "requirements" not in data:
+        data["requirements"] = {"live": []}
+
+    if package_name not in data["requirements"]["live"]:
+        data["requirements"]["live"].append(package_name)
+        with open(toml_path, "wb") as file:
+            tomli_w.dump(data, file, multiline_strings=True)
+
