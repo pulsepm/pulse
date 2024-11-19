@@ -17,7 +17,7 @@ __BOILER_PLATE_URL: str = "https://github.com/pulsepm/boilerplate"
 
 
 def initialize(
-    name: str, publisher: str, repo_name: str, pods: bool, entry: str = "main.pwn", output: str = "main.amx"
+    name: str, publisher: str, repo_name: str, pods: bool, local: bool, entry: str = "main.pwn", output: str = "main.amx"
 ) -> None:
     """
     Initialize a new Project instance.
@@ -29,13 +29,14 @@ def initialize(
     """
 
     current_dir = os.getcwd()
-    project_dir = os.path.join(current_dir, repo_name)
+    project_dir = os.path.join(current_dir, repo_name) if local is False else current_dir
+    print(project_dir)
     project_table = {"name": name, "publisher": publisher, "repo": repo_name, "entry": entry, "output": output}
 
     server = {}
     compiler_data = {}
 
-    if os.path.isdir(project_dir):
+    if os.path.isdir(project_dir) and local is False:
         print(f"Fatal error: Folder {repo_name} already exists")
         return
 
