@@ -2,6 +2,7 @@ import os
 import shutil
 
 import click
+import requests
 from pulse.core.core_dir import RUNTIME_PATH, PODS_PATH
 
 from .download_asset import get_asset
