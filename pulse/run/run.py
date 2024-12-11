@@ -46,12 +46,15 @@ def run(ensure: bool) -> None:
         stroke.dump(31)
         return
 
-    runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
-   
-    if not "version" in data["runtime"] and pods is False:
+    try:
+        runtime_plugins = os.path.join(PODS_PATH, 'runtime', 'plugins') if pods else os.path.join(RUNTIME_PATH, data['runtime']['version'], "plugins")
+    except KeyError as ke:
         logging.fatal("Fatal error occurred -> Runtime version is not specified. Exit code: 32")
         stroke.dump(32)
         return
+
+    print(pods)
+    
     
     runtime_loc = os.path.join(RUNTIME_PATH, data['runtime']['version']) if not pods else os.path.join(PODS_PATH, "runtime")
 
