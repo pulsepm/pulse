@@ -7,6 +7,15 @@ from typing import Literal
 import git
 import pulse.core.git.git_download as git_download
 import pulse.core.git.git as git
+import tomli
+import tomli_w
+
+from .content import (
+    echo_retrieve_fail,
+    get_package_syntax,
+    get_package_type
+
+)
 
 
 @click.command
@@ -34,16 +43,16 @@ def install(package: str) -> None:
     except:
         branch = git.default_branch(re_package)
         if not branch:
-            return package_utils.echo_retrieve_fail(re_package, branch)
+            return echo_retrieve_fail(re_package, branch)
 
         re_package.append(branch)
 
     package_path = os.path.join(PACKAGE_PATH, re_package[0], re_package[1])
     if os.path.exists(package_path):
-        package_utils.write_requirements(
+        write_requirements(
             re_package[0],
             re_package[1],
-            package_utils.get_package_syntax(package),
+            get_package_syntax(package),
             re_package[2],
         )
         return click.echo(f"{re_package[0]}/{re_package[1]}'s already installed!")
@@ -52,12 +61,12 @@ def install(package: str) -> None:
         re_package[0],
         re_package[1],
         re_package[2],
-        package_utils.get_package_syntax(package),
+        get_package_syntax(package),
     )
     if not git_repo:
-        return package_utils.echo_retrieve_fail(re_package, git_repo)
+        return echo_retrieve_fail(re_package, git_repo)
 
-    package_type = package_utils.get_package_type(git_repo)
+    package_type = get_package_type(git_repo)
     if not package_type:
         return click.echo(
             f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} is not Pulse / sampctl package!"
@@ -74,7 +83,7 @@ def install(package: str) -> None:
     write_requirements(
         re_package[0],
         re_package[1],
-        package_utils.get_package_syntax(package),
+        get_package_syntax(package),
         re_package[2],
     )
     click.echo(

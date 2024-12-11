@@ -21,6 +21,7 @@ def build(mode: str):
         data = tomli.load(toml_file)
 
     # i just realized i might not need to check for pods folder and generally pods having the compiler folder so just go with cached compiler for now
+    print(data)
     project_data = data['project']
     requirements = data.get('requirements')
     print(requirements)
