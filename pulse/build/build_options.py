@@ -1,1 +1,0 @@
-BUILD_OPTIONS = ['debug', 'optimize', 'modules', 'working_directory', 'assembly', 'compatibility']
