@@ -23,6 +23,7 @@ def ensure() -> None:
     """
     return ensure_packages()
 
+
 def process_requirement(requirement):
     re_package = re.split("/|@|:|#", requirement)
     try:
@@ -33,6 +34,9 @@ def process_requirement(requirement):
         )
 
         branch = git.default_branch(re_package)
+        if isinstance(branch, dict) and int(branch["status"]) >= 400:
+            print("INVALID REPOSITORY")
+            return
         if not branch:
             click.echo("Found incorrect package name.")
             return
@@ -99,21 +103,16 @@ def process_requirement(requirement):
         if resource:
             ensure_resource(resource, local_package_path, package_type)
 
-# Main function to handle the concurrent execution
+
 def process_all_requirements_concurrently(requirements):
-    # Create a ThreadPoolExecutor with a max number of workers (adjust as needed)
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        # Submit each requirement to be processed concurrently
         futures = [executor.submit(process_requirement, requirement) for requirement in requirements]
 
-        # Wait for all futures to complete and handle any exceptions
         for future in concurrent.futures.as_completed(futures):
             try:
                 future.result()  # This will raise an exception if the thread failed
             except Exception as e:
                 click.echo(f"An error occurred: {e}")
-
-# Example usage:
 
 
 def ensure_packages() -> None:
@@ -127,6 +126,7 @@ def ensure_packages() -> None:
 
     click.echo(f'Found: {len(requirements)} requirements..')
     process_all_requirements_concurrently(requirements)
+
 
 def ensure_dependencies(dependencies: list[str]) -> None:
     for raw_dependency in dependencies:
@@ -232,6 +232,7 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
 
         if archive.string.endswith(".tar.gz"):
             handle_extraction_tar(archive_path, includes, resource, files, required_plugin)
+
 
 def get_pulse_requirements(path) -> dict[str] | bool:
     with open(path, mode="rb") as f:
