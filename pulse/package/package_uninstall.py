@@ -4,6 +4,7 @@ import click
 import re
 from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH
 import pulse.core.core_constants as core_constants
+import pulse.core.git.git as git
 import shutil
 from typing import Callable
 import stat
@@ -38,7 +39,7 @@ def uninstall(package: str, recursive: bool, force: bool) -> None:
         re_package.append(branch)
 
     package_path = os.path.join(
-        PACKAGE_PATH, re_package[0], re_package[1], re_package[2]
+        PACKAGE_PATH, str(re_package[0]), str(re_package[1]), str(re_package[2])
     )
     if not os.path.exists(package_path):
         return click.echo(f"Package {package} was not found.")
