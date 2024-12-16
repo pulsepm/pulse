@@ -121,6 +121,7 @@ def default_branch(package: list[str]) -> str | int:
     }
     response = requests.get(url, headers=headers)
     if not response.ok:
+        print(response.json())
         return response.json()
 
     return response.json()["default_branch"]

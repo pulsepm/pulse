@@ -95,7 +95,7 @@ def gitpython_download(owner: str, repo: str, version: str, save_path, raw_synta
     token_data = tomli.load(token_file)
     token = token_data["token"]
 
-     
+
     if valid_token(token):
         print("VALID")
     else:
@@ -194,6 +194,7 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
             pckg_path_version,
             requirement
         )
+
         print(
             f"Installed dependency: {re_requirement[0]}/{re_requirement[1]} ({re_requirement[2]}) in {pckg_path_version}"
         )
