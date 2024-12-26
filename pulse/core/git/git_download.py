@@ -168,6 +168,18 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
         except:
             print("Found incorrect package name.")
             continue
+        
+        pckg_path = os.path.join(
+            PACKAGE_PATH, str(re_requirement[0]), str(re_requirement[1])
+        )
+        if os.path.exists(pckg_path):
+            print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
+            continue
+
+        response = default_branch(re_requirement)
+        if "status" in response and response["status"] == "404":
+            print(f"Skipping {re_requirement[0]}/{re_requirement[1]} due to unavailability")
+            continue
 
         try:
             branch = re_requirement[2]
@@ -178,13 +190,6 @@ def download_requirements(requirements: list, package_type: Literal["sampctl", "
                 continue
 
             re_requirement.append(branch)
-
-        pckg_path = os.path.join(
-            PACKAGE_PATH, str(re_requirement[0]), str(re_requirement[1])
-        )
-        if os.path.exists(pckg_path):
-            print(f"Found installed package: {re_requirement[0]}/{re_requirement[1]}..")
-            continue
 
         pckg_path_version = os.path.join(pckg_path, re_requirement[2])
         gitpython_download(
