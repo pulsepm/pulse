@@ -5,12 +5,20 @@ import datetime
 import pulse.config.config as config
 import random
 
-from .stroke_codes import stroke_errors
 from typing import Any, Union
-from pulse.core.core_dir import STROKE_PATH
+from .stroke_codes import stroke_errors
+from ..core.core_dir import STROKE_PATH
 
 
 def dump(code: int, meta: str = None, __as_command: bool = False) -> None:
+    """
+    Dumps the stroke with given exit code and metadata.
+
+    Args:
+        code (int): Integer representation of exitcode.
+        meta (str): Optional metadata.
+        __as_command (bool): Whether to run the function via command.
+    """
     if code not in stroke_errors:
         return
 

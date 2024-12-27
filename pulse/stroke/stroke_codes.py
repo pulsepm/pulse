@@ -21,9 +21,7 @@ Errors = namedtuple(
 
 stroke_errors: dict[int, Errors] = {
     2: Errors(
-        "Invalid Pulse package.",
-        "Initialize the package.",
-        "Run 'pulse init' command."
+        "Invalid Pulse package.", "Initialize the package.", "Run 'pulse init' command."
     ),
     11: Errors(
         "Corrupt configuration file.",
@@ -147,16 +145,13 @@ stroke_errors: dict[int, Errors] = {
         [
             "Open 'pulse.toml' file.",
             "Look up for 'entry' field under [project] table.",
-            "Remember the name and respectively create that file."
-        ]
+            "Remember the name and respectively create that file.",
+        ],
     ),
     61: Errors(
         "Invalid compiler table.",
         "Specify the [compiler] table.",
-        [
-            "Open 'pulse.toml' file.",
-            "Create [compiler] table."
-        ]
+        ["Open 'pulse.toml' file.", "Create [compiler] table."],
     ),
     62: Errors(
         "Compiler table hasn't been specified.",
@@ -164,24 +159,24 @@ stroke_errors: dict[int, Errors] = {
         [
             "Open 'pulse.toml' file.",
             "Navigate to '[compiler]' or '[compiler.PROFILE]' table.",
-            "Specify 'version' key with the value representing the compiler's version."
-        ]    
+            "Specify 'version' key with the value representing the compiler's version.",
+        ],
     ),
     63: Errors(
         "No compiler profiles.",
         "This happens when you try to build the gamemode with no profiles. Simply create a new profile.",
         [
             "Open 'pulse.toml' file.",
-            "Create a profile as '[compiler.PROFILENAME]' table."
-        ]
+            "Create a profile as '[compiler.PROFILENAME]' table.",
+        ],
     ),
     64: Errors(
         "Invalid profile selected.",
         "You tried to build a mode with invalid profile, but there are profiles present. Either specify a valid one or create the desired one.",
         [
             "Open 'pulse.toml' file.",
-            "Either check for the valid profile or create a desired one as '[compiler.PROFILENAME]' table."
-        ]
+            "Either check for the valid profile or create a desired one as '[compiler.PROFILENAME]' table.",
+        ],
     ),
     5: Errors(
         "Server or client error.",
