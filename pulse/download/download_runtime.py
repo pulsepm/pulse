@@ -2,8 +2,7 @@ import os
 import shutil
 
 import click
-
-import pulse.core.git.git_get as git_get
+import requests
 from pulse.core.core_dir import RUNTIME_PATH, PODS_PATH
 
 from .download_asset import get_asset
@@ -19,7 +18,7 @@ def get_runtime(isolate: bool = True) -> None:
         None
     """
     click.echo("Select the runtime you would like to use.")
-    for i, release in enumerate(git_get.get_github_runtime_releases(), start=1):
+    for i, release in enumerate(get_github_runtime_releases(), start=1):
         runtimes_dict[i] = release["name"]
         click.echo(f"{i}. {release['name']}")
 
@@ -41,3 +40,23 @@ def get_runtime(isolate: bool = True) -> None:
         pass  # Handle adding those to pulse.toml
 
     return runtimes_dict[runtime_choice]
+
+
+def get_github_runtime_releases() -> list:
+    """
+    Retrieves a list of compiler releases from a GitHub repository.
+
+    Returns:
+        list: A list of compiler releases available in the GitHub repository.
+    """
+
+    try:
+        response = requests.get(
+            "https://api.github.com/repos/openmultiplayer/open.mp/tags"
+        )
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    else:
+        return response.json()

@@ -5,12 +5,15 @@ from zipfile import ZipFile
 import click
 import re
 import tomli
-from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH, safe_open
+from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH, safe_open, CONFIG_FILE
 import pulse.core.git.git_download as git_download
-import pulse.core.git.git_get as git_get
-import pulse.package.package_utils as package_utils
+import pulse.package.content as content
+import pulse.core.git.git as git
 import shutil
-
+from pulse.package.unpack.unpack import extract_member
+from pulse.package.package_handle import handle_extraction_zip, handle_extraction_tar
+from .package_uninstall import on_rm_error
+import concurrent.futures
 
 
 @click.command
@@ -19,6 +22,97 @@ def ensure() -> None:
     Ensures all packages are present.
     """
     return ensure_packages()
+
+
+def process_requirement(requirement):
+    re_package = re.split("/|@|:|#", requirement)
+    try:
+        re_package[2]
+    except IndexError:
+        click.echo(
+            f"No tag, commit, or branch was specified in the requirements for {re_package[0]}/{re_package[1]}. The default branch name will be used!"
+        )
+
+        branch = git.default_branch(re_package)
+        if isinstance(branch, dict) and int(branch["status"]) >= 400:
+            print("INVALID REPOSITORY")
+            return
+        if not branch:
+            click.echo("Found incorrect package name.")
+            return
+
+        re_package.append(branch)
+
+    if not is_package_installed(re_package[0], re_package[1], re_package[2]):
+        click.echo(f"Package {re_package[0]}/{re_package[1]} ({re_package[2]}) was not found, it will be installed..")
+        git_repo = git.get_github_repo(
+            re_package[0],
+            re_package[1],
+            re_package[2],
+            content.get_package_syntax(requirement),
+        )
+        if not git_repo:
+            return content.echo_retrieve_fail(requirement, git_repo)
+
+        package_type = content.get_package_type(git_repo)
+        if not package_type:
+            click.echo(
+                f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} Attempting to check the post-release changes"
+            )
+            git_repo = git.get_github_repo(
+                re_package[0],
+                re_package[1],
+                re_package[2],
+                False,
+            )
+            package_type = content.get_package_type(git_repo)
+
+            if not package_type:
+                return
+
+            click.echo("Fallback has been found")
+            package_type = "master-" + package_type
+
+        click.echo(f"Installing: {re_package[0]}/{re_package[1]} ({re_package[2]})..")
+        git_download.download_package(
+            re_package[0],
+            re_package[1],
+            os.path.join(PACKAGE_PATH, re_package[0], re_package[1]),
+            re_package[2],
+            package_type,
+            requirement
+        )
+
+    else:
+        package_type = content.get_local_package_type(re_package[0], re_package[1], re_package[2])
+        local_package_path = os.path.join(REQUIREMENTS_PATH, re_package[1])
+        if os.path.exists(local_package_path):
+            shutil.rmtree(local_package_path, onerror=on_rm_error)
+
+        shutil.copytree(
+            os.path.join(PACKAGE_PATH, re_package[0], re_package[1], re_package[2]),
+            local_package_path,
+        )
+
+        dependencies = content.get_requirements(local_package_path, package_type)
+        if dependencies:
+            print(f"Found dependencies for {re_package[0]}/{re_package[1]} ({package_type})!")
+            ensure_dependencies(dependencies)
+
+        resource = content.get_package_resources(local_package_path, package_type)
+        if resource:
+            ensure_resource(resource, local_package_path, package_type)
+
+
+def process_all_requirements_concurrently(requirements):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(process_requirement, requirement) for requirement in requirements]
+
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()  # This will raise an exception if the thread failed
+            except Exception as e:
+                click.echo(f"An error occurred: {e}")
 
 
 def ensure_packages() -> None:
@@ -31,82 +125,7 @@ def ensure_packages() -> None:
         return click.echo("No requirements were found in pulse.toml..")
 
     click.echo(f'Found: {len(requirements)} requirements..')
-    for requirement in requirements:
-        re_package = re.split("/|@|:|#", requirement)
-        try:
-            re_package[2]
-        except:
-            click.echo(
-                f"No tag, commit, or branch was specified in the requirements for {re_package[0]}/{re_package[1]}. The default branch name will be used!"
-            )
-
-            branch = git_get.default_branch(re_package)
-            if not branch:
-                click.echo("Found incorrect package name.")
-                continue
-
-            re_package.append(branch)
-
-        if not is_package_installed(re_package[0], re_package[1], re_package[2]):
-            click.echo(f"Package {re_package[0]}/{re_package[1]} ({re_package[2]}) was not found, it will be installed..")
-            git_repo = git_get.get_github_repo(
-                re_package[0],
-                re_package[1],
-                re_package[2],
-                package_utils.get_package_syntax(requirement),
-            )
-            if not git_repo:
-                return package_utils.echo_retrieve_fail(requirement, git_repo)
-
-            package_type = package_utils.get_package_type(git_repo)
-            if not package_type:
-                # Check if the pawn.json/pulse.toml has been made available after the release
-                click.echo(
-                    f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} Attempting to check the post-release changes"
-                )
-                git_repo = git_get.get_github_repo(
-                   re_package[0],
-                    re_package[1],
-                    re_package[2],
-                    False,
-                )
-                package_type = package_utils.get_package_type(git_repo)
-                
-                if not package_type:
-                    continue
-                
-                click.echo("Fallback has been found")
-                package_type = "master-" + package_type 
-
-            click.echo(f"Installing: {re_package[0]}/{re_package[1]} ({re_package[2]})..")
-            git_download.download_package(
-                re_package[0],
-                re_package[1],
-                os.path.join(PACKAGE_PATH, re_package[0], re_package[1]),
-                re_package[2],
-                package_type,
-                requirement
-            )
-
-        else:
-            package_type = package_utils.get_local_package_type(re_package[0], re_package[1], re_package[2])
-            local_package_path = os.path.join(REQUIREMENTS_PATH, re_package[1])
-            if os.path.exists(local_package_path):
-                shutil.rmtree(local_package_path, onerror=package_utils.on_rm_error)
-
-            shutil.copytree(
-                os.path.join(PACKAGE_PATH, re_package[0], re_package[1], re_package[2]),
-                local_package_path,
-            )
-
-            dependencies = git_get.get_requirements(local_package_path, package_type)
-            if dependencies:
-                print(f"Found dependencies for {re_package[0]}/{re_package[1]} ({package_type})!")
-                ensure_dependencies(dependencies)
-
-            resource = git_get.get_package_resources(local_package_path, package_type)
-            if resource:
-                ensure_resource(resource, local_package_path, package_type)
+    process_all_requirements_concurrently(requirements)
 
 
 def ensure_dependencies(dependencies: list[str]) -> None:
@@ -119,7 +138,7 @@ def ensure_dependencies(dependencies: list[str]) -> None:
                 f"No tag, commit, or branch was specified in the requirements for {dependency[0]}/{dependency[1]}. The default branch name will be used!"
             )
 
-            branch = git_get.default_branch(dependency)
+            branch = git.default_branch(dependency)
             if not branch:
                 click.echo("Found incorrect package name.")
                 continue
@@ -133,16 +152,16 @@ def ensure_dependencies(dependencies: list[str]) -> None:
             continue
 
         if not is_package_installed(dependency[0], dependency[1], dependency[2]):
-            git_repo = git_get.get_github_repo(
+            git_repo = git.get_github_repo(
                 dependency[0],
                 dependency[1],
                 dependency[2],
-                package_utils.get_package_syntax(raw_dependency),
+                content.get_package_syntax(raw_dependency),
             )
             if not git_repo:
-                return package_utils.echo_retrieve_fail(raw_dependency, git_repo)
+                return content.echo_retrieve_fail(raw_dependency, git_repo)
 
-            package_type = package_utils.get_package_type(git_repo)
+            package_type = content.get_package_type(git_repo)
             if not package_type:
                 click.echo(
                     f"Couldn't find pulse.toml or pawn.json!\n{dependency[0]}/{dependency[1]} is not Pulse / sampctl package!"
@@ -159,30 +178,23 @@ def ensure_dependencies(dependencies: list[str]) -> None:
                 raw_dependency
             )
         else:
-            package_type = package_utils.get_local_package_type(dependency[0], dependency[1], dependency[2])
+            package_type = content.get_local_package_type(dependency[0], dependency[1], dependency[2])
             shutil.copytree(
                 default_path,
                 dependency_path,
                 dirs_exist_ok=True
             )
 
-            libs = git_get.get_requirements(default_path, package_type)
+            libs = content.get_requirements(default_path, package_type)
             if libs:
                 ensure_dependencies(libs)
 
-            resource = git_get.get_package_resources(default_path, package_type)
+            resource = content.get_package_resources(default_path, package_type)
             if resource:
                 ensure_resource(resource, default_path, package_type)
 
         click.echo(f"Migrated {dependency[0]}/{dependency[1]} ({dependency[2]})..")
 
-
-def contains_folders(path):
-    # Regex to match any folder pattern (one or more characters followed by a "/")
-    pattern = re.compile(r'[^/]+/')
-    # Check if the string contains any folder pattern
-    ret = bool(pattern.search(path))
-    return ret, print(f"CONTAINS {path}") if ret else print(f"NO CONTAIN {path}")
 
 def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pulse", "sampctl"]) -> None:
     plugin_path = os.path.join(PLUGINS_PATH, resource[0], resource[1])
@@ -191,10 +203,10 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)  
 
-    includes = git_get.get_resource_includes(origin_path, package_type)
-    files = git_get.get_resource_files(origin_path, package_type)
+    includes = content.get_resource_includes(origin_path, package_type)
+    files = content.get_resource_files(origin_path, package_type)
 
-    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
+    required_plugin = content.get_resource_plugins(origin_path, package_type)
     if not required_plugin and not (file_name.endswith(".so") or file_name.endswith(".dll")):
         return
 
@@ -207,73 +219,20 @@ def ensure_resource(resource: tuple[str], origin_path, package_type: Literal["pu
     if not os.path.exists(cwd_path):
         os.makedirs(cwd_path)
 
-    required_plugin = git_get.get_resource_plugins(origin_path, package_type)
+    required_plugin = content.get_resource_plugins(origin_path, package_type)
     if not required_plugin and not (file_name.endswith(".so") or file_name.endswith(".dll")):
         return
     
     for file in os.listdir(plugin_path):
         archive = re.match(resource[2], file)
-        if archive:
-            break
-    archive_path = os.path.join(plugin_path, archive.string)
+        archive_path = os.path.join(plugin_path, archive.string)
 
-    if archive.string.endswith(".zip"):
-        def extract_member(zip_file, member_name, extract_path):
-            extract_path = extract_path.rstrip("\\")
-            base_name = os.path.basename(member_name)
-            
-            destination = os.path.join(extract_path, base_name)
-            os.makedirs(os.path.dirname(destination), exist_ok=True)
-            with zip_file.open(member_name) as source_file:
-                with open(destination, 'wb') as dest_file:
-                    dest_file.write(source_file.read())
+        if archive.string.endswith(".zip"):
+            handle_extraction_zip(archive_path, includes, resource, files, required_plugin)
 
-        with ZipFile(archive_path) as zf:
-            for archive_file in zf.namelist():
-                if includes and archive_file.endswith(".inc"):
-                    if re.match(includes[0], archive_file):
-                        res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                        os.makedirs(res_path, exist_ok=True)
-                        extract_member(zf, archive_file, res_path)
-                        continue
+        if archive.string.endswith(".tar.gz"):
+            handle_extraction_tar(archive_path, includes, resource, files, required_plugin)
 
-                if files:
-                    
-                    for key, item in files.items():
-                        if re.match(key, archive_file):
-                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                            os.makedirs(res_path, exist_ok=True)
-                            extract_member(zf, archive_file, os.path.join(res_path, os.path.dirname(item)))
-
-                if re.match(required_plugin[0], archive_file):
-                    extract_member(zf, archive_file, cwd_path)
-
-    if archive.string.endswith(".tar.gz"):
-        def extract_member(tar_file, member_name, extract_path):
-            extract_path = extract_path.rstrip("\\")
-            member = tar_file.getmember(member_name)
-            member.name = os.path.basename(member.name)
-            tar_file.extract(member, extract_path)
-            
-        with tarfile.open(archive_path, "r:gz") as tf:
-            for archive_file in tf.getnames():
-                if includes and archive_file.endswith(".inc"):
-                    res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                    os.makedirs(res_path, exist_ok=True)
-                    extract_member(tf, archive_file, res_path)
-                    continue
-
-                if files:
-                    
-                    for key, item in files.items():
-                        if re.match(key, archive_file):
-                            res_path = os.path.join(REQUIREMENTS_PATH, ".resources", resource[1])
-                            os.makedirs(res_path, exist_ok=True)
-                            extract_member(tf, archive_file, os.path.join(res_path, os.path.dirname(item)))
-                     
-
-                if re.match(required_plugin[0], archive_file):
-                    extract_member(tf, archive_file, cwd_path)
 
 def get_pulse_requirements(path) -> dict[str] | bool:
     with open(path, mode="rb") as f:

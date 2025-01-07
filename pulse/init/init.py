@@ -6,13 +6,13 @@ from pulse.project.initialize import initialize
 
 
 @click.command
-def init() -> None:
+@click.option('--local', '-l', is_flag=True, default=False, help="Initialize package locally.")
+def init(local: bool) -> None:
     """
     Initialize a new Pulse project.
 
     Returns:
         None
-
     """
     name = "boiler"
     repo = "boiler"
@@ -45,7 +45,7 @@ def init() -> None:
     )
 
     output = str(entry).replace(".pwn", ".amx")
-    initialize(project, name, repo, pods, entry, output)
+    initialize(project, name, repo, pods, local, entry, output)
     config.write(data, "wb")
 
     if create:

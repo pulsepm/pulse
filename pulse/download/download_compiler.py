@@ -2,8 +2,8 @@ import os
 import shutil
 
 import click
+import requests
 
-import pulse.core.git.git_get as git_get
 from pulse.core.core_dir import COMPILER_PATH, PODS_PATH
 
 from .download_asset import get_asset
@@ -19,7 +19,7 @@ def get_compiler(isolate: bool = True) -> str:
         None
     """
     click.echo("Select the compiler you would like to use.")
-    for i, release in enumerate(git_get.get_github_compiler_releases(), start=1):
+    for i, release in enumerate(get_github_compiler_releases(), start=1):
         compilers_dict[i] = release["name"]
         click.echo(f"{i}. {release['name']}")
 
@@ -40,3 +40,20 @@ def get_compiler(isolate: bool = True) -> str:
         pass  # Handle those being added to pulse.toml
 
     return compilers_dict[compiler_choice]
+
+
+def get_github_compiler_releases() -> list:
+    """
+    Retrieves a list of compiler releases from a GitHub repository.
+
+    Returns:
+        list: A list of compiler releases available in the GitHub repository.
+    """
+    try:
+        response = requests.get("https://api.github.com/repos/pulsepm/compiler/tags")
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    else:
+        return response.json()

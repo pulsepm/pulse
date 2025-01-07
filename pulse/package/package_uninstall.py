@@ -3,11 +3,12 @@ import os
 import click
 import re
 from pulse.core.core_dir import PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH
-import pulse.package.package_utils as package_utils
-import pulse.core.git.git_get as git_get
 import pulse.core.core_constants as core_constants
+import pulse.core.git.git as git
 import shutil
-
+from typing import Callable
+import stat
+import pulse.package.content as content
 
 @click.command
 @click.argument("package")
@@ -31,14 +32,14 @@ def uninstall(package: str, recursive: bool, force: bool) -> None:
     try:
         re_package[2]
     except:
-        branch = git_get.default_branch(re_package)
+        branch = git.default_branch(re_package)
         if not branch:
             return package_utils.echo_retrieve_fail(re_package, branch)
 
         re_package.append(branch)
 
     package_path = os.path.join(
-        PACKAGE_PATH, re_package[0], re_package[1], re_package[2]
+        PACKAGE_PATH, str(re_package[0]), str(re_package[1]), str(re_package[2])
     )
     if not os.path.exists(package_path):
         return click.echo(f"Package {package} was not found.")
@@ -48,17 +49,17 @@ def uninstall(package: str, recursive: bool, force: bool) -> None:
 
     package_type = package_utils.get_local_package_type(re_package[0], re_package[1], re_package[2])
     if recursive:
-        dependencies = git_get.get_requirements(package_path, package_type)
+        dependencies = content.get_requirements(package_path, package_type)
         if dependencies:
             print(f"Found dependencies for {re_package[0]}/{re_package[1]} ({package_type})!")
             remove_dependencies(dependencies)
 
-    resource = git_get.get_package_resources(package_path, package_type)
+    resource = content.get_package_resources(package_path, package_type)
     if resource:
         print(f"Found resource for {re_package[0]}/{re_package[1]} ({package_type})!")
         remove_resource(package_path, resource, package_type)
 
-    package_utils.remove_requirements(
+    remove_requirements(
         re_package[0],
         re_package[1],
         package_utils.get_package_syntax(package),
@@ -81,7 +82,7 @@ def remove_dependencies(dependencies) -> None:
         try:
             dependence[2]
         except:
-            branch = git_get.default_branch(dependence)
+            branch = git.default_branch(dependence)
             if not branch:
                 return package_utils.echo_retrieve_fail(dependence, branch)
 
@@ -100,11 +101,11 @@ def remove_dependencies(dependencies) -> None:
             f"Found dependence {dependence[0]}/{dependence[1]} ({dependence[2]}) in {dependence_ppc_path}!"
         )
         dependence_type = package_utils.get_local_package_type(dependence[0], dependence[1], dependence[2])
-        libs = git_get.get_requirements(dependence_ppc_path, dependence_type)
+        libs = content.get_requirements(dependence_ppc_path, dependence_type)
         if libs:
             remove_dependencies(libs)
 
-        resource = git_get.get_package_resources(dependence_ppc_path, dependence_type)
+        resource = content.get_package_resources(dependence_ppc_path, dependence_type)
         if resource:
             remove_resource(resource)
 
@@ -117,7 +118,7 @@ def remove_resource(origin_path, resource: tuple[str], package_type) -> None:
     if os.path.exists(resource_path):
         shutil.rmtree(os.path.join(PLUGINS_PATH, owner, repo))
 
-    plugin = git_get.get_resource_plugins(origin_path, package_type)
+    plugin = content.get_resource_plugins(origin_path, package_type)
     plugin_path = os.path.join(
         REQUIREMENTS_PATH, "plugins", package_utils.get_resource_file("".join(plugin))
     )
@@ -128,3 +129,20 @@ def remove_resource(origin_path, resource: tuple[str], package_type) -> None:
 def remove_package(owner: str, repo: str) -> None:
     shutil.rmtree(os.path.join(PACKAGE_PATH, owner, repo), onerror=package_utils.on_rm_error)
     shutil.rmtree(os.path.join(REQUIREMENTS_PATH, repo), onerror=package_utils.on_rm_error)
+
+
+def remove_requirements(owner: str, repo: str, sign: str, syntax: str) -> None:
+    package_name: str = f"{owner}/{repo}{sign}{syntax}"
+    toml_path = os.path.join(os.getcwd(), "pulse.toml")
+    with open(toml_path, "rb") as file:
+        data = tomli.load(file)
+
+    if package_name in data["requirements"]["live"]:
+        data["requirements"]["live"].remove(package_name)
+        with open(toml_path, "wb") as file:
+            tomli_w.dump(data, file, multiline_strings=True)
+
+
+def on_rm_error(function: Callable, path, info):
+    os.chmod(path, stat.S_IWRITE)
+    os.unlink(path)

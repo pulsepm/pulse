@@ -13,16 +13,15 @@ Errors = namedtuple(
 # prefixes legend
 # nothing is for general errors
 # 1[code] config module error codes
-# 2 git module error codes
-# 3 run module
-# 4 pack module
-# 5 run module
+# 2[code] git module error codes
+# 3[code] run module
+# 4[code] pack module
+# 5[code] run module
+# 6[code] build module
 
 stroke_errors: dict[int, Errors] = {
     2: Errors(
-        "Invalid Pulse package.",
-        "Initialize the package.",
-        "Run 'pulse init' command."
+        "Invalid Pulse package.", "Initialize the package.", "Run 'pulse init' command."
     ),
     11: Errors(
         "Corrupt configuration file.",
@@ -139,6 +138,45 @@ stroke_errors: dict[int, Errors] = {
         "Invalid release file.",
         "Occurs when there are no release file.",
         ["Simply delete old .rel", "file pack it again."],
+    ),
+    60: Errors(
+        "Project doesn't have an entry point.",
+        "Create the .pwn file which is specified as the entry in 'pulse.toml' file.",
+        [
+            "Open 'pulse.toml' file.",
+            "Look up for 'entry' field under [project] table.",
+            "Remember the name and respectively create that file.",
+        ],
+    ),
+    61: Errors(
+        "Invalid compiler table.",
+        "Specify the [compiler] table.",
+        ["Open 'pulse.toml' file.", "Create [compiler] table."],
+    ),
+    62: Errors(
+        "Compiler table hasn't been specified.",
+        "Specify it via 'version = (version)' key within '[compiler]' table, or within '[compiler.PROFILE]' table.",
+        [
+            "Open 'pulse.toml' file.",
+            "Navigate to '[compiler]' or '[compiler.PROFILE]' table.",
+            "Specify 'version' key with the value representing the compiler's version.",
+        ],
+    ),
+    63: Errors(
+        "No compiler profiles.",
+        "This happens when you try to build the gamemode with no profiles. Simply create a new profile.",
+        [
+            "Open 'pulse.toml' file.",
+            "Create a profile as '[compiler.PROFILENAME]' table.",
+        ],
+    ),
+    64: Errors(
+        "Invalid profile selected.",
+        "You tried to build a mode with invalid profile, but there are profiles present. Either specify a valid one or create the desired one.",
+        [
+            "Open 'pulse.toml' file.",
+            "Either check for the valid profile or create a desired one as '[compiler.PROFILENAME]' table.",
+        ],
     ),
     5: Errors(
         "Server or client error.",
