@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from ..core.core_dir import CONFIG_PATH
-from ..core.git.git_release import publish_release
+from ..git.git_release import publish_release
 
 @click.command
 @click.option("--pre", "-p", type=bool, required=False, is_flag=True, default=False)

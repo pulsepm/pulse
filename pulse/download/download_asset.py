@@ -3,7 +3,7 @@ import platform
 
 import click
 
-import pulse.core.git.git_download as git_download
+import pulse.git.git_download as git_download
 from pulse.core.core_dir import COMPILER_PATH, RUNTIME_PATH
 
 
