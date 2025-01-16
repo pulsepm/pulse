@@ -28,6 +28,7 @@ PLUGINS_PATH = os.path.join(data_dir, "plugins")
 REQUIREMENTS_PATH = os.path.join(os.getcwd(), "requirements")
 PODS_PATH = os.path.join(os.getcwd(), ".pods")
 PROJECT_TOML_FILE = os.path.join(os.getcwd(), "pulse.toml")
+PROJECT_JSON_COMPAT_FILE = os.path.join(os.getcwd(), "pawn.json")
 
 def safe_open(p: str, mode: str) -> IO:
     try:
