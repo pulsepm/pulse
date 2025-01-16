@@ -8,6 +8,7 @@ from pulse.run.run import run
 from pulse.stroke.stroke import stroke
 from pulse.package.package_pack import package
 from pulse.release.release import release
+from pulse.package.package_install import install
 import pulse.core.core_constants as core_constants
 
 def print_version(ctx, param, value):
@@ -38,3 +39,4 @@ pulse.add_command(run)
 pulse.add_command(stroke)
 pulse.add_command(package)
 pulse.add_command(release)
+pulse.add_command(install)
