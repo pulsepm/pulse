@@ -2,8 +2,9 @@ import os
 import tomli
 import re
 import logging
+import shutil
 
-from ...core.core_dir import safe_open, PROJECT_TOML_FILE
+from ...core.core_dir import safe_open, PROJECT_TOML_FILE, PACKAGE_PATH, REQUIREMENTS_PATH
 from ..parse._parse import PACKAGE_RE, package_parse
 
 '''
@@ -25,6 +26,34 @@ def install_package(package):
     # check for repo any user/repo
     if "requirements" in l and __package_in_requirements(package, l["requirements"]["live"]):
         return
+
+    # check if it cached
+    pkg = __package_cached(package)
+    if pkg:
+        logging.info(f"{package} has been cached already. Moving it to our project...")
+        try:
+            shutil.copytree(pkg, os.path.join(REQUIREMENTS_PATH, os.path.basename(os.path.dirname(pkg))), dirs_exist_ok=True)
+        except shutil.Error as e:
+            print(f"Skip {e}")
+
+    else:
+        print("NNNNN")
+
+
+def __package_cached(package):
+    parsed_package = package_parse(package)
+    if not parsed_package:
+        logging.error(f"Invalid package format: {package}")
+        return False
+
+    author, repo, _, ver = parsed_package
+    cached_path = os.path.join(PACKAGE_PATH, author, repo, ver if ver else "default")
+    if os.path.isdir(cached_path) and os.listdir(cached_path): 
+        # not empty! Since no point of having a cached empty package?
+        # Should we check if repo is broken?
+        return cached_path
+
+    return False
 
 
 def __package_in_requirements(package, requirements_list):
