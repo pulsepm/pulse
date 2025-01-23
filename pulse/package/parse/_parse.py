@@ -1,6 +1,6 @@
 import re
 
-PACKAGE_RE = r"^([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)([:#@])?([^\s:#@]*)?$"
+PACKAGE_RE = r"^([a-zA-Z0-9_.-]+)/([a-zA-Z0-9_.-]+)([:#@])?([^\s:#@]*)?$"
 
 
 def package_parse(package):
