@@ -176,7 +176,8 @@ def __package_install(package):
     save_path = os.path.join(PACKAGE_PATH, author, repo, version if version else "default")
     if os.path.exists(save_path) and os.listdir(save_path):
         print("Package is already installed, skip")
-        shutil.copytree(save_path, os.path.join(REQUIREMENTS_PATH, repo), dirs_exist_ok=True)
+        if not os.path.exists(os.path.join(REQUIREMENTS_PATH, repo)):
+            shutil.copytree(save_path, os.path.join(REQUIREMENTS_PATH, repo), dirs_exist_ok=True)
         return False
 
     version = default_branch([author, repo]) if not version else version
