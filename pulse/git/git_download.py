@@ -2,7 +2,7 @@ import os
 import tarfile
 from zipfile import ZipFile
 from platform import system
-from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH, safe_open, CONFIG_FILE
+from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH, CONFIG_FILE
 from typing import Literal
 from git import Repo
 from pulse.git.git import valid_token, default_branch

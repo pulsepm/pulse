@@ -26,8 +26,8 @@ def build(mode: str) -> None:
         return
 
     # pulse toml exists, read it
-    toml_file: IO = safe_open("pulse.toml", "rb")
-    data: dict = tomli.load(toml_file)
+    with safe_open("pulse.toml", "rb") as toml_file:
+        data: dict = tomli.load(toml_file)
 
     # i just realized i might not need to check for pods folder and generally
     # pods having the compiler folder so just go with cached compiler for now

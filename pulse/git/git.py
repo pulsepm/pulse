@@ -95,9 +95,9 @@ def get_github_repo(
     if not syntax_type:
         url = f"https://api.github.com/repos/{author}/{repo}/contents"
 
-    token_file = safe_open(CONFIG_FILE, 'rb')
-    token_data = tomli.load(token_file)
-    token = token_data["token"]
+    with safe_open(CONFIG_FILE, 'rb') as toml_file:
+        token_data = tomli.load(token_file)
+        token = token_data["token"]
 
     headers = {
         "Authorization": f"token {token}"
@@ -111,9 +111,9 @@ def get_github_repo(
 
 
 def default_branch(package: list[str]) -> str | int:
-    token_file = safe_open(CONFIG_FILE, 'rb')
-    token_data = tomli.load(token_file)
-    token = token_data["token"]
+    with safe_open(CONFIG_FILE, 'rb') as token_file:
+        token_data = tomli.load(token_file)
+        token = token_data["token"]
     
     url = f"https://api.github.com/repos/{package[0]}/{package[1]}"
     headers = {
