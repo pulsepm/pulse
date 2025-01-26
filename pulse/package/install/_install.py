@@ -1,5 +1,6 @@
 import os
 import tomli
+import tomli_w
 import re
 import logging
 import shutil
@@ -8,6 +9,8 @@ import json
 from ...core.core_dir import safe_open, PROJECT_TOML_FILE, PACKAGE_PATH, REQUIREMENTS_PATH, CONFIG_FILE
 from ..parse._parse import PACKAGE_RE, package_parse
 from ...git.git import default_branch, valid_token
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from git import Repo, GitCommandError
 
@@ -25,10 +28,11 @@ def install_package(package):
     if not os.path.isfile(os.path.join(os.getcwd(), "pulse.toml")):
         return logging.fatal("STROKE!1, invalid project")
 
-    t = safe_open(PROJECT_TOML_FILE, 'rb')
-    l = tomli.load(t)
+    with safe_open(PROJECT_TOML_FILE, 'rb+') as t:
+        l = tomli.load(t)
+    print(l)
     # check for repo any user/repo
-    if "requirements" in l and __package_in_requirements(package, l["requirements"]["live"]):
+    if "requirements" in l and __package_in_requirements_list(package, l["requirements"]["live"]):
         return
 
     # check if it cached
@@ -38,20 +42,97 @@ def install_package(package):
         logging.info(f"{package} has been cached already. Moving it to our project...")
         shutil.copytree(pkg, dst, dirs_exist_ok=True)
         deps = __gather_dependencies(package)
+        print("bef", l)
+        l.get("requirements", {}).get("live", []).append(package)
+        print("AF ", l)
+        with safe_open(PROJECT_TOML_FILE, 'rb+') as t:
+            tomli_w.dump(l, t)
+
+        if not deps:
+            logging.warning(f"No dependencies found for {package}. Skipping...")
+            return
         __install_deps(deps)
 
     # clone it
     else:
         inst = __package_install(package)
-        print("INST")
         if inst:
-            print("inst1")
+            l.setdefault("requirements", {}).setdefault("live", []).append(package)
+            with safe_open(PROJECT_TOML_FILE, 'rb+') as t:
+                tomli_w.dump(l, t)
             deps = __gather_dependencies(package)
-            print(deps)
+            if not deps:
+                logging.warning(f"No dependencies found for {package}. Skipping...")
+                return
             __install_deps(deps)
 
-            
+    print(t.closed)
 
+            
+def __package_install(package):
+    parsed_package = package_parse(package)
+    if not parsed_package:
+        logging.error(f"Invalid package format: {package}")
+        return False
+
+    author, repo, separator, version = parsed_package
+    save_path = os.path.join(PACKAGE_PATH, author, repo, version if version else "default")
+    if __package_cached(package):
+        logging.info(f"{package} has been cached already. Moving it to our project...")
+        if not __package_in_requirements_dir(package):
+            shutil.copytree(save_path, os.path.join(REQUIREMENTS_PATH, repo), dirs_exist_ok=True) # throws insufficient perms for .git
+        return False
+
+    version = default_branch([author, repo]) if not version else version
+
+    with safe_open(CONFIG_FILE, 'rb') as token_file:
+        token_data = tomli.load(token_file)
+        token = token_data["token"]
+
+    if valid_token(token):
+        print("VALID")
+    else:
+        print("INVALID")
+
+    if separator == "#":
+        git_repo = Repo.clone_from(
+            f"https://{{{token}}}@github.com/{author}/{repo}.git", save_path, single_branch=True
+        )
+        git_repo.head.reset(commit=version, index=True, working_tree=True)
+        logging.info(f"Installed {author}/{repo}#{version}")
+
+    elif separator == ":":
+        try:
+            git_repo = Repo.clone_from(f"https://{{{token}}}@github.com/{author}/{repo}", save_path)
+        except GitCommandError:
+            print("Git error, no repo")
+            return False
+
+        git = git_repo.git
+        git.checkout(version)
+        logging.info(f"Installed {author}/{repo}:{version}")
+
+    elif separator == "@":
+        git_repo = Repo.clone_from(
+            f"https://{{{token}}}@github.com/{author}/{repo}.git",
+            save_path,
+            single_branch=True,
+            branch=version,
+        )
+        logging.info(f"Installed {author}/{repo}@{version}")
+    
+    else:
+        git_repo = Repo.clone_from(
+            f"https://{{{token}}}@github.com/{author}/{repo}.git",
+            save_path,
+            single_branch=True,
+            branch=version,
+        )
+        logging.info(f"Installed {author}/{repo}@{version}")
+
+    shutil.copytree(save_path, os.path.join(REQUIREMENTS_PATH, repo), dirs_exist_ok=True)
+
+    return git_repo
 
 
 def __package_cached(package):
@@ -70,7 +151,21 @@ def __package_cached(package):
     return False
 
 
-def __package_in_requirements(package, requirements_list):
+def __package_in_requirements_dir(package):
+    parsed_package = package_parse(package)
+    if not parsed_package:
+        logging.error(f"Invalid package format: {package}")
+        return False
+
+    _, repo, _, _ = parsed_package
+    req = os.path.join(REQUIREMENTS_PATH, repo)
+    if os.path.isdir(req) and os.listdir(req): 
+        return req
+
+    return False
+
+
+def __package_in_requirements_list(package, requirements_list):
     """
     Check if a package or its repo is in the requirements list.
     Suggest ensuring if it exists, otherwise suggest installation.
@@ -111,22 +206,30 @@ def __package_in_requirements(package, requirements_list):
 
 
 def __install_deps(deps):
-    print("Installing dependencies")
-    for dep in deps:
-        print("Installing dependency", dep)
+    logging.debug("Installing dependencies...")
+
+    def install_dependency(dep):
+        logging.debug(f"Installing dependency {dep}")
         inst = __package_install(dep)
         if inst:
-            print(f"Package {dep} has been installed")
-        else:
-            print(f"Couldn't install {dep}")
+            logging.info(f"Package {dep} has been installed.")
 
-    for dep in deps:
+    def process_dependency(dep):
         deps_list = __gather_dependencies(dep)
         if not deps_list:
-            print(f"No dependencies found for {dep}")
-            continue
+            logging.warning(f"No dependencies found for {dep}. Skipping...")
+            return []
+        return deps_list
 
-        __install_deps(deps_list)
+    with ThreadPoolExecutor() as executor:
+        executor.map(install_dependency, deps)
+
+    with ThreadPoolExecutor() as executor:
+        results = executor.map(process_dependency, deps)
+
+    for deps_list in results:
+        if deps_list:
+            __install_deps(deps_list)
 
 
 def __gather_dependencies(package):
@@ -139,94 +242,30 @@ def __gather_dependencies(package):
     author, repo, _, ver = parsed_package
     cached_path = os.path.join(PACKAGE_PATH, author, repo, ver if ver else "default")
 
-    t = safe_open(os.path.join(cached_path, "pulse.toml"), 'rb')
-    if t:
-        l = tomli.load(t)
-        try:
-            reqs = l["requirements"]["live"]
-        except:
-            reqs = []
-
-    elif not t:
-        t = safe_open(os.path.join(cached_path, "pawn.json"), 'r')
+    with safe_open(os.path.join(cached_path, "pulse.toml"), 'rb') as t:
         if t:
-            l = json.load(t)
+            l = tomli.load(t)
             try:
-                reqs = l["dependencies"]
+                reqs = l["requirements"]["live"]
             except KeyError:
                 reqs = []
-
-        elif not t:
-            reqs = []
+        else:
+            # If pulse.toml not found, check for pawn.json
+            with safe_open(os.path.join(cached_path, "pawn.json"), 'r') as t:
+                if t:
+                    l = json.load(t)
+                    try:
+                        reqs = l["dependencies"]
+                    except KeyError:
+                        reqs = []
+                else:
+                    # If both files fail, set reqs as an empty list
+                    reqs = []
 
     # Now load the reqs list
-    print("Gathered")
+    logging.debug("Requirements has been gathered.")
 
 
     return reqs
 
 
-def __package_install(package):
-    parsed_package = package_parse(package)
-    if not parsed_package:
-        logging.error(f"Invalid package format: {package}")
-        return False
-
-    author, repo, separator, version = parsed_package
-    save_path = os.path.join(PACKAGE_PATH, author, repo, version if version else "default")
-    if os.path.exists(save_path) and os.listdir(save_path):
-        print("Package is already installed, skip")
-        if not os.path.exists(os.path.join(REQUIREMENTS_PATH, repo)):
-            shutil.copytree(save_path, os.path.join(REQUIREMENTS_PATH, repo), dirs_exist_ok=True)
-        return False
-
-    version = default_branch([author, repo]) if not version else version
-
-    token_file = safe_open(CONFIG_FILE, 'rb')
-    token_data = tomli.load(token_file)
-    token = token_data["token"]
-
-    if valid_token(token):
-        print("VALID")
-    else:
-        print("INVALID")
-
-    if separator == "#":
-        git_repo = Repo.clone_from(
-            f"https://{{{token}}}@github.com/{author}/{repo}.git", save_path, single_branch=True
-        )
-        print(f"https://{{{token}}}@github.com/{author}/{repo}.git")
-        git_repo.head.reset(commit=version, index=True, working_tree=True)
-        print(f"Installed {author}/{repo}#{version}")
-
-    elif separator == ":":
-        try:
-            git_repo = Repo.clone_from(f"https://{{{token}}}@github.com/{author}/{repo}", save_path)
-        except GitCommandError:
-            print("Git error, no repo")
-            return False
-
-        git = git_repo.git
-        git.checkout(version)
-        print(f"Installed {author}/{repo}#{version}")
-
-    elif separator == "@":
-        git_repo = Repo.clone_from(
-            f"https://{{{token}}}@github.com/{author}/{repo}.git",
-            save_path,
-            single_branch=True,
-            branch=version,
-        )
-    
-    else: 
-        print(f"TAJING {version}")
-        git_repo = Repo.clone_from(
-            f"https://{{{token}}}@github.com/{author}/{repo}.git",
-            save_path,
-            single_branch=True,
-            branch=version,
-        )
-
-    shutil.copytree(save_path, os.path.join(REQUIREMENTS_PATH, repo), dirs_exist_ok=True)
-
-    return git_repo
