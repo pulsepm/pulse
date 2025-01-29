@@ -2,7 +2,7 @@ import os
 import click
 import logging
 
-from .install._install import install_package
+from .install._install import install_package, install_all_packages
 
 '''
 - user executes `pulse install user/repo`
@@ -15,6 +15,11 @@ from .install._install import install_package
 - Update pulse.toml 
 '''
 @click.command
-@click.argument("package", required=True, type=str)
-def install(package):
-    install_package(package)
+@click.argument("package", required=False, type=str)
+@click.option("--all", "-a", is_flag=True, required=False, default=False, help="Ensures all packages are present.")
+def install(package, all):
+    '''Performs installation of a package.'''
+    if not all:
+        install_package(package)
+    else:
+        install_all_packages()
