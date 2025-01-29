@@ -5,6 +5,7 @@ import re
 import logging
 import shutil
 import json
+import time
 
 from ...core.core_dir import safe_open, PROJECT_TOML_FILE, PACKAGE_PATH, REQUIREMENTS_PATH, CONFIG_FILE
 from ..parse._parse import PACKAGE_RE, package_parse
@@ -13,6 +14,18 @@ from ...git.git import default_branch, valid_token
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from git import Repo, GitCommandError
+
+installed_deps = {}
+
+
+def install_all_packages():
+    with safe_open(PROJECT_TOML_FILE, 'rb+') as t:
+        l = tomli.load(t)
+
+    __install_deps(l["requirements"]["live"])
+    
+
+
 
 '''
 - user executes `pulse install user/repo`
@@ -30,7 +43,6 @@ def install_package(package):
 
     with safe_open(PROJECT_TOML_FILE, 'rb+') as t:
         l = tomli.load(t)
-    print(l)
     # check for repo any user/repo
     if "requirements" in l and __package_in_requirements_list(package, l["requirements"]["live"]):
         return
@@ -42,9 +54,7 @@ def install_package(package):
         logging.info(f"{package} has been cached already. Moving it to our project...")
         shutil.copytree(pkg, dst, dirs_exist_ok=True)
         deps = __gather_dependencies(package)
-        print("bef", l)
         l.get("requirements", {}).get("live", []).append(package)
-        print("AF ", l)
         with safe_open(PROJECT_TOML_FILE, 'rb+') as t:
             tomli_w.dump(l, t)
 
@@ -57,16 +67,15 @@ def install_package(package):
     else:
         inst = __package_install(package)
         if inst:
-            l.setdefault("requirements", {}).setdefault("live", []).append(package)
+            l.get("requirements", {}).get("live", []).append(package)
             with safe_open(PROJECT_TOML_FILE, 'rb+') as t:
                 tomli_w.dump(l, t)
+
             deps = __gather_dependencies(package)
             if not deps:
                 logging.warning(f"No dependencies found for {package}. Skipping...")
                 return
             __install_deps(deps)
-
-    print(t.closed)
 
             
 def __package_install(package):
@@ -76,9 +85,18 @@ def __package_install(package):
         return False
 
     author, repo, separator, version = parsed_package
+
+    if repo in installed_deps:
+        logging.warning(f"Package {author}/{repo} has already been installed as {installed_deps[repo]['author']}/{repo}")
+        return False
+        
     save_path = os.path.join(PACKAGE_PATH, author, repo, version if version else "default")
     if __package_cached(package):
         logging.info(f"{package} has been cached already. Moving it to our project...")
+        installed_deps[f"{repo}"] = {
+            "author": author,
+            "version": version
+        }
         if not __package_in_requirements_dir(package):
             shutil.copytree(save_path, os.path.join(REQUIREMENTS_PATH, repo), dirs_exist_ok=True) # throws insufficient perms for .git
         return False
@@ -90,9 +108,9 @@ def __package_install(package):
         token = token_data["token"]
 
     if valid_token(token):
-        print("VALID")
+        pass
     else:
-        print("INVALID")
+        pass
 
     if separator == "#":
         git_repo = Repo.clone_from(
@@ -105,7 +123,7 @@ def __package_install(package):
         try:
             git_repo = Repo.clone_from(f"https://{{{token}}}@github.com/{author}/{repo}", save_path)
         except GitCommandError:
-            print("Git error, no repo")
+            logging.error("Git error, no repo")
             return False
 
         git = git_repo.git
@@ -131,6 +149,12 @@ def __package_install(package):
         logging.info(f"Installed {author}/{repo}@{version}")
 
     shutil.copytree(save_path, os.path.join(REQUIREMENTS_PATH, repo), dirs_exist_ok=True)
+
+    installed_deps[f"{repo}"] = {
+        "author": author,
+        "version": version
+    }
+    logging.info(f"Package {package} has been installed.")
 
     return git_repo
 
@@ -210,15 +234,15 @@ def __install_deps(deps):
 
     def install_dependency(dep):
         logging.debug(f"Installing dependency {dep}")
-        inst = __package_install(dep)
-        if inst:
-            logging.info(f"Package {dep} has been installed.")
+        __package_install(dep)
+
 
     def process_dependency(dep):
         deps_list = __gather_dependencies(dep)
         if not deps_list:
-            logging.warning(f"No dependencies found for {dep}. Skipping...")
+            logging.warning(f"No dependencies found for {dep}. Skipping.1..")
             return []
+
         return deps_list
 
     with ThreadPoolExecutor() as executor:
@@ -263,9 +287,17 @@ def __gather_dependencies(package):
                     reqs = []
 
     # Now load the reqs list
-    logging.debug("Requirements has been gathered.")
+    if reqs:
+        logging.debug("Requirements has been gathered.")
 
 
     return reqs
+
+
+
+
+
+
+
 
 
