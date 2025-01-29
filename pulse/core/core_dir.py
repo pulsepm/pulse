@@ -2,6 +2,7 @@ import os
 from platform import system
 
 from contextlib import contextmanager
+import logging
 
 PROJECT_NAME = "pulsepm"
 
@@ -37,13 +38,13 @@ def safe_open(p: str, mode: str):
         file = open(p, mode)
         yield file
     except FileNotFoundError:
-        print(f"Error: The file '{p}' was not found.")
+        logging.error(f"The file '{p}' was not found.")
         yield None
     except PermissionError:
-        print(f"Error: You do not have permission to open the file '{p}'.")
+        logging.error(f"You do not have permission to open the file '{p}'.")
         yield None
     except IOError as e:
-        print(f"Error: An IOError occurred while opening the file '{p}'.\nDetails: {e}")
+        logging.error(f"An IOError occurred while opening the file '{p}'.\nDetails: {e}")
         yield None
     finally:
         if 'file' in locals() and not file.closed:
