@@ -2,7 +2,7 @@ import os
 import click
 import logging
 
-from .install._install import install_package, install_all_packages
+from .install._install import PackageInstaller
 
 '''
 - user executes `pulse install user/repo`
@@ -19,7 +19,8 @@ from .install._install import install_package, install_all_packages
 @click.option("--all", "-a", is_flag=True, required=False, default=False, help="Ensures all packages are present.")
 def install(package, all):
     '''Performs installation of a package.'''
+    pckgi = PackageInstaller()
     if not all:
-        install_package(package)
+        pckgi.install_package(package)
     else:
-        install_all_packages()
+        pckgi.install_all_packages()

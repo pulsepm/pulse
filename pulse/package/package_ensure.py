@@ -1,8 +1,8 @@
-from .install._install import install_all_packages
-
+from .install._install import PackageInstaller
 import click
 
 @click.command
 def ensure():
     '''Ensures all packages are present.'''
-    install_all_packages()
+    pckge = PackageInstaller()
+    pckge.ensure_all_packages()
