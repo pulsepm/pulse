@@ -5,4 +5,4 @@ import click
 def ensure():
     '''Ensures all packages are present.'''
     pckge = PackageInstaller()
-    pckge.ensure_all_packages()
+    pckge.install_all_packages()
