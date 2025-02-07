@@ -14,7 +14,7 @@ from ...core.core_dir import safe_open, PROJECT_TOML_FILE, PACKAGE_PATH, REQUIRE
 from ..parse._parse import package_parse
 from ...git.git import default_branch, valid_token
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 
 from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathError
 
@@ -44,9 +44,7 @@ class PackageInstaller:
             return False
 
         if self._install_single_package(package):
-            config.get("requirements", {}).get("live", []).append(package)
-            with safe_open(PROJECT_TOML_FILE, 'wb') as t:
-                tomli_w.dump(config, t)
+            self._append_dependency(package)
             
             deps = self._gather_dependencies(package)
             if deps:
@@ -253,6 +251,13 @@ class PackageInstaller:
                         reqs = []
 
         return reqs
+
+    def _append_dependency(self, package):
+        """Appends the dependency to the project config file."""
+        with safe_open(PROJECT_TOML_FILE, 'wb') as pt:
+            ptd = tomli.load(pt)
+            ptd.get("requirements", {}).get("live", []).append(package)
+            tomli_w.dump(ptd, pt)
 
     def _package_in_requirements_list(self, package, requirements_list):
         """
