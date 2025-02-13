@@ -5,14 +5,18 @@ import tomli_w
 import logging
 import shutil
 import stat
+import platform
 from pathlib import Path
 from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathError
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
+import re
 
-from ...core.core_dir import safe_open, PROJECT_TOML_FILE, PACKAGE_PATH, REQUIREMENTS_PATH, CONFIG_FILE
+from ..package_handle import handle_extraction_zip, handle_extraction_tar
 from ..parse._parse import package_parse
-from ...git.git import default_branch, valid_token
+from ...git.git_download import download_github_release
+from ...core.core_dir import safe_open, PROJECT_TOML_FILE, PACKAGE_PATH, REQUIREMENTS_PATH, CONFIG_FILE, PLUGINS_PATH
+from ...git.git import default_branch, valid_token, get_latest_tag, get_release_assets
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -22,8 +26,11 @@ from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathErro
 class PackageInstaller:
     def __init__(self):
         self.installed_deps = {}
+        self.installed_plugins = []
+        self.plugins_to_install = {}
         self.package_path = Path(PACKAGE_PATH)
         self.requirements_path = Path(REQUIREMENTS_PATH)
+        self.plugins_path = Path(PLUGINS_PATH)
 
     def install_all_packages(self):
         """Install all packages listed in project configuration."""
@@ -40,15 +47,14 @@ class PackageInstaller:
         with safe_open(PROJECT_TOML_FILE, 'rb') as t:
             config = tomli.load(t)
 
-        if "requirements" in config and self._package_in_requirements_list(package, config["requirements"]["live"]):
+        if not "requirements" or "requirements" in config and self._package_in_requirements_list(package, config["requirements"]["live"]):
             return False
 
         if self._install_single_package(package):
             self._append_dependency(package)
             
             deps = self._gather_dependencies(package)
-            if deps:
-                self._install_deps(deps)
+            self._install_deps(deps)
             return True
         
         return False
@@ -204,6 +210,85 @@ class PackageInstaller:
             logging.error(f"Error updating repository state: {e}")
             return False
 
+    def _install_single_plugin(self, prs):
+        package, resource = prs
+        author, repo, sep, ver = package_parse(package)
+        if sep != "@":
+            ver = get_latest_tag(author, repo, ver)
+        
+        plugin_dir = self.plugins_path / repo / ver
+
+        if plugin_dir.exists() and (files := os.listdir(plugin_dir)):
+            logging.warning(f"Plugin {repo} already installed")
+            for file in files:
+                if resource.get("archive", False):
+                    if file.endswith(".zip"):
+                        handle_extraction_zip(
+                            plugin_dir / file,
+                            resource.get("includes", []),
+                            ('', repo, ''),
+                            resource.get("files", []),
+                            resource.get("plugins", [])
+                        )
+                    elif file.endswith(".tar.gz"):
+                        handle_extraction_tar(
+                            plugin_dir / file,
+                            resource.get("includes", []),
+                            ('', repo, ''),
+                            resource.get("files", []),
+                            resource.get("plugins", [])
+                        )
+                else:
+                    shutil.copy2(plugin_dir / file, self.requirements_path / "plugins") 
+            return True
+        
+        release_assets = get_release_assets(author, repo, ver)
+        if not release_assets:
+            logging.error(f"No release assets found for {author}/{repo} at version {ver}")
+            return False
+            
+        asset_name_pattern = resource["name"]
+        matching_asset = None
+        
+        for asset in release_assets:
+            if re.match(asset_name_pattern, asset["name"]):
+                matching_asset = asset
+                break
+
+        if matching_asset:
+            ap = download_github_release(
+                author,
+                repo,
+                ver,
+                matching_asset["name"],
+                self.plugins_path / repo / ver
+            )
+
+            if ap:
+                if resource.get("archive", False):
+                    if ap.endswith(".zip"):
+                        handle_extraction_zip(
+                                ap,
+                                resource.get("includes", []),
+                                ('', repo, ''), #TODO: change to repo name
+                                resource.get("files", []),
+                                resource.get("plugins", [])
+                            )
+                    elif ap.endswith(".tar.gz"):
+                        handle_extraction_tar(
+                            ap,
+                            resource.get("includes", []),
+                            ('', repo, ''),
+                            resource.get("files", []),
+                            resource.get("plugins", [])
+                        )
+                else:
+                    shutil.copy2(ap, self.requirements_path / "plugins")
+                    
+            
+        else:
+            logging.error(f"No asset matching pattern '{asset_name_pattern}' found in release {ver}")
+
     def _install_deps(self, deps):
         """Install multiple dependencies concurrently."""
 
@@ -212,6 +297,9 @@ class PackageInstaller:
 
         def process_dependency(dep):
             return self._gather_dependencies(dep)
+
+        def install_plugin(prs):
+            return self._install_single_plugin(prs)
 
         with ThreadPoolExecutor() as executor:
             executor.map(install_dependency, deps)
@@ -222,6 +310,21 @@ class PackageInstaller:
         for deps_list in results:
             if deps_list:
                 self._install_deps(deps_list)
+
+        if self.plugins_to_install:
+            with ThreadPoolExecutor() as executor:
+                # Collect and process the results
+                plugin_results = list(executor.map(install_plugin, self.plugins_to_install.items()))
+                
+                # Log any failures
+                for package, result in zip(self.plugins_to_install.keys(), plugin_results):
+                    if result is False:
+                        logging.error(f"Failed to install plugin for package: {package}")
+                    elif result is True:
+                        logging.info(f"Successfully installed plugin for package: {package}")
+                
+                # Clear the plugins queue after installation
+                self.plugins_to_install = {}
 
     def _gather_dependencies(self, package):
         parsed_package = package_parse(package)
@@ -239,6 +342,8 @@ class PackageInstaller:
                     reqs = l["requirements"]["live"]
                 except KeyError:
                     reqs = []
+                
+                # NO plugins in pulse.toml
             else:
                 with safe_open(os.path.join(cached_path, "pawn.json"), 'r') as t:
                     if t:
@@ -247,6 +352,14 @@ class PackageInstaller:
                             reqs = l["dependencies"]
                         except KeyError:
                             reqs = []
+
+                        try:
+                            r = l["resources"]
+                            if ret := self._is_plugin(r):
+                                self.plugins_to_install[package] = ret
+
+                        except KeyError:
+                            pass
                     else:
                         reqs = []
 
@@ -254,9 +367,19 @@ class PackageInstaller:
 
     def _append_dependency(self, package):
         """Appends the dependency to the project config file."""
-        with safe_open(PROJECT_TOML_FILE, 'wb') as pt:
+        ptd = None
+        with safe_open(PROJECT_TOML_FILE, 'rb') as pt:
             ptd = tomli.load(pt)
-            ptd.get("requirements", {}).get("live", []).append(package)
+
+            if "requirements" not in ptd:
+                ptd["requirements"] = {}
+            if "live" not in ptd["requirements"]:
+                ptd["requirements"]["live"] = []
+                
+            # Append the package
+            ptd["requirements"]["live"].append(package)
+
+        with safe_open(PROJECT_TOML_FILE, 'wb') as pt:
             tomli_w.dump(ptd, pt)
 
     def _package_in_requirements_list(self, package, requirements_list):
@@ -295,3 +418,13 @@ class PackageInstaller:
 
         logging.info(f"{repo} not found in the requirements. Proceeding with installation.")
         return False
+
+
+    def _is_plugin(self, resources):
+        """Check if a package is a plugin."""
+        for res in resources:
+            if res["platform"] == platform.system().lower():
+                return res
+
+        return False
+
