@@ -96,7 +96,7 @@ def get_github_repo(
         url = f"https://api.github.com/repos/{author}/{repo}/contents"
 
     with safe_open(CONFIG_FILE, 'rb') as toml_file:
-        token_data = tomli.load(token_file)
+        token_data = tomli.load(toml_file)
         token = token_data["token"]
 
     headers = {
@@ -125,4 +125,78 @@ def default_branch(package: list[str]) -> str | int:
         return response.json()
 
     return response.json()["default_branch"]
+
+
+def get_latest_tag(author: str, repo: str, ref: str | None = None) -> str | None:
+    """
+    Get the latest tag for a specific branch or commit.
+    
+    Args:
+        author (str): Repository owner
+        repo (str): Repository name
+        ref (str, optional): Branch name or commit SHA. If None, gets latest tag from default branch
+    
+    Returns:
+        str | None: The tag name if found, None if no tags exist
+    """
+    with safe_open(CONFIG_FILE, 'rb') as toml_file:
+        token_data = tomli.load(toml_file)
+        token = token_data["token"]
+
+    headers = {"Authorization": f"token {token}"}
+    
+    # Get all tags first
+    tags_url = f"https://api.github.com/repos/{author}/{repo}/tags"
+    tags_response = requests.get(tags_url, headers=headers)
+    
+    if not tags_response.ok or not tags_response.json():
+        return None
+    
+    if not ref:
+        # If no ref specified, return the most recent tag
+        return tags_response.json()[0]["name"]
+    
+    # Get the commit SHA for the specified ref
+    commit_url = f"https://api.github.com/repos/{author}/{repo}/commits/{ref}"
+    commit_response = requests.get(commit_url, headers=headers)
+    
+    if not commit_response.ok:
+        return None
+    
+    target_sha = commit_response.json()["sha"]
+    
+    # Find the most recent tag that points to this commit or its ancestors
+    for tag in tags_response.json():
+        if tag["commit"]["sha"] == target_sha:
+            return tag["name"]
+    
+    return None
+
+
+def get_release_assets(author: str, repo: str, tag: str) -> list | None:
+    """
+    Get all assets for a specific release.
+    
+    Args:
+        author (str): Repository owner
+        repo (str): Repository name
+        tag (str): Release tag
+        
+    Returns:
+        list | None: List of asset objects or None if not found
+    """
+    with safe_open(CONFIG_FILE, 'rb') as toml_file:
+        token_data = tomli.load(toml_file)
+        token = token_data["token"]
+
+    headers = {"Authorization": f"token {token}"}
+    
+    url = f"https://api.github.com/repos/{author}/{repo}/releases/tags/{tag}"
+    response = requests.get(url, headers=headers)
+    
+    if not response.ok:
+        return None
+        
+    release_data = response.json()
+    return release_data.get("assets", [])
 
