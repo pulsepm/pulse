@@ -10,8 +10,6 @@ import logging
 import pulse.stroke.stroke as stroke
 import pulse.download.download as download
 from ..core.core_dir import RUNTIME_PATH, PODS_PATH, REQUIREMENTS_PATH
-from ..package.content import get_resource_files
-from ..package.package_ensure import ensure_packages
 
 from .run_server import server
 from .run_convert import config_convert
@@ -75,7 +73,8 @@ def run(ensure: bool) -> None:
     logging.info("Informations gathered.")
 
     if ensure:
-        ensure_packages()
+       # ensure_packages()
+       pass
 
     logging.debug("Determinating OS...")
     system = platform.system()
@@ -121,7 +120,7 @@ def run(ensure: bool) -> None:
             req_path = os.path.join(REQUIREMENTS_PATH, folder)
             res_path = os.path.join(REQUIREMENTS_PATH, ".resources")
             print(req_path)
-            files = get_resource_files(req_path, "sampctl")
+           # files = get_resource_files(req_path, "sampctl")
             # repo = get_resource_repo(req_path, "sampctl")
             if files:
                 for file in files.values():

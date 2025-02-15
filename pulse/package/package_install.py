@@ -1,112 +1,26 @@
 import os
-
 import click
-import re
-from pulse.core.core_dir import PACKAGE_PATH
-from typing import Literal
-import git
-import pulse.core.git.git_download as git_download
-import pulse.core.git.git as git
-import tomli
-import tomli_w
+import logging
 
-from .content import (
-    echo_retrieve_fail,
-    get_package_syntax,
-    get_package_type
+from .install._install import PackageInstaller
 
-)
-
-
+'''
+- user executes `pulse install user/repo`
+- pulse checks if we are in a pulse project; if not: inform the user and exit;
+- Check if such package exists in the config file; if so: inform the user, suggest ensuring
+- Check if it's already installed (if the path in the project exists, if it does remove it as we're about to reinstall it (from now on code for installing a new package and ensuring will be the same, so it should be good to abstract it))
+- Check if we have it cached; if so: use it (copy it to our project or create a symlink)
+- If it's not cached, check if the repository is valid on github (unless you also add custom git handlers which would be dope)
+- In case of valid repository, cache it and either symlink or copy it to our local project as a git repo
+- Update pulse.toml 
+'''
 @click.command
-@click.argument("package")
-def install(package: str) -> None:
-    """
-    Install a pulse package.
-    """
-
-    re_package = re.split(
-        "/|@|:|#", package
-    )  # ['Ykpauneu', 'pmtest' 'main / 1.0.0 / 7d3rfe']
-    if len(re_package) > 3:
-        return click.echo("Using many options are not supported!")
-
-    try:
-        re_package[1]
-    except:
-        return click.echo(
-            "Incorrect entry of the package name.\nExample of command: pulse install Author/Repo"
-        )
-
-    try:
-        re_package[2]
-    except:
-        branch = git.default_branch(re_package)
-        if not branch:
-            return echo_retrieve_fail(re_package, branch)
-
-        re_package.append(branch)
-
-    package_path = os.path.join(PACKAGE_PATH, re_package[0], re_package[1])
-    if os.path.exists(package_path):
-        write_requirements(
-            re_package[0],
-            re_package[1],
-            get_package_syntax(package),
-            re_package[2],
-        )
-        return click.echo(f"{re_package[0]}/{re_package[1]}'s already installed!")
-
-    git_repo = git.get_github_repo(
-        re_package[0],
-        re_package[1],
-        re_package[2],
-        get_package_syntax(package),
-    )
-    if not git_repo:
-        return echo_retrieve_fail(re_package, git_repo)
-
-    package_type = get_package_type(git_repo)
-    if not package_type:
-        return click.echo(
-            f"Couldn't find pulse.toml or pawn.json!\n{re_package[0]}/{re_package[1]} is not Pulse / sampctl package!"
-        )
-    click.echo(f"Installing: {re_package[0]}/{re_package[1]} ({re_package[2]})..")
-    git_download.download_package(
-        re_package[0],
-        re_package[1],
-        package_path,
-        re_package[2],
-        package_type,
-        package
-    )
-    write_requirements(
-        re_package[0],
-        re_package[1],
-        get_package_syntax(package),
-        re_package[2],
-    )
-    click.echo(
-        f"Successfully installed library: {re_package[0]}/{re_package[1]} ({re_package[2]})!"
-    )
-
-
-def write_requirements(owner: str, repo: str, sign: str, syntax: str) -> None:
-    package_name: str = f"{owner}/{repo}{sign}{syntax}"
-    toml_path = os.path.join(os.getcwd(), "pulse.toml")
-
-    if not os.path.exists(toml_path):
-        tmp_file = open(toml_path, mode="w")
-        tmp_file.close()
-
-    with open(toml_path, "rb") as file:
-        data = tomli.load(file)
-
-    if "requirements" not in data:
-        data["requirements"] = {"live": []}
-
-    if package_name not in data["requirements"]["live"]:
-        data["requirements"]["live"].append(package_name)
-        with open(toml_path, "wb") as file:
-            tomli_w.dump(data, file, multiline_strings=True)
-
+@click.argument("package", required=False, type=str)
+@click.option("--all", "-a", is_flag=True, required=False, default=False, help="Ensures all packages are present.")
+def install(package, all):
+    '''Performs installation of a package.'''
+    pckgi = PackageInstaller()
+    if not all:
+        pckgi.install_package(package)
+    else:
+        pckgi.install_all_packages()
