@@ -2,6 +2,10 @@ import os
 import tarfile
 from zipfile import ZipFile
 import requests
+from github import Github
+import logging
+from ..core.core_dir import safe_open, CONFIG_FILE
+import tomli
 
 
 def download_and_unzip_github_release(
@@ -92,43 +96,61 @@ def download_github_release(
     Returns:
         str | None: Path to the downloaded asset if successful, None if failed
     """
-    api_url = f"https://api.github.com/repos/{owner}/{repo}/releases/tags/{tag}"
-    response = requests.get(api_url)
-
-    if response.status_code != 200:
-        print(f"Failed to get release information. HTTP Status Code: {response.status_code}")
-        return None
-
-    release_info = response.json()
-
-    asset_url = None
-    for asset in release_info.get("assets", []):
-        if asset["name"] == asset_name:
-            asset_url = asset["browser_download_url"]
-            break
-
-    if asset_url is None:
-        print(f"Asset '{asset_name}' not found in the release.")
-        return None
-
     try:
-        response = requests.get(asset_url, allow_redirects=True)
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to connect to the server: {e}")
+        with safe_open(CONFIG_FILE, 'rb') as toml_file:
+            token_data = tomli.load(toml_file)
+            token = token_data["token"]
+
+        g = Github(token)
+        repository = g.get_repo(f"{owner}/{repo}")
+        
+        try:
+            release = repository.get_release(tag)
+        except Exception:
+            logging.error(f"Failed to get release information for tag: {tag}")
+            return None
+
+        asset = None
+        for a in release.get_assets():
+            if a.name == asset_name:
+                asset = a
+                break
+
+        if asset is None:
+            logging.error(f"Asset '{asset_name}' not found in the release")
+            return None
+
+        try:
+            os.makedirs(target_folder, exist_ok=True)
+            asset_path = os.path.join(target_folder, asset_name)
+            
+            headers = {
+                "Accept": "application/octet-stream",
+                "Authorization": f"token {token}"
+            }
+            
+            response = requests.get(
+                asset.browser_download_url,
+                headers=headers,
+                allow_redirects=True
+            )
+            
+            if response.status_code == 200:
+                with open(asset_path, 'wb') as f:
+                    f.write(response.content)
+                logging.info("Asset download successful")
+                return asset_path
+            else:
+                logging.error(f"Failed to download asset. Status code: {response.status_code}")
+                return None
+            
+        except Exception as e:
+            logging.error(f"Failed to download asset: {e}")
+            return None
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
         return None
-
-    if response.status_code != 200:
-        print(f"Failed to download the asset. HTTP Status Code: {response.status_code}")
-        return None
-
-    print("Asset download successful")
-    os.makedirs(target_folder, exist_ok=True)
-    asset_path = os.path.join(target_folder, asset_name)
-
-    with open(asset_path, "wb") as asset_file:
-        asset_file.write(response.content)
-
-    return asset_path
 
 def extract_asset(asset_path: str, target_folder: str, remove_asset: bool = True) -> bool:
     """
