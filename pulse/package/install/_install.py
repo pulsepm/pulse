@@ -6,21 +6,18 @@ import logging
 import shutil
 import stat
 import platform
-from pathlib import Path
-from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathError
-from concurrent.futures import ThreadPoolExecutor
-from typing import Callable
 import re
+
+from pathlib import Path
+from typing import Callable
+from concurrent.futures import ThreadPoolExecutor
+from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathError
 
 from ..package_handle import handle_extraction_zip, handle_extraction_tar
 from ..parse._parse import package_parse
 from ...git.git_download import download_github_release
 from ...core.core_dir import safe_open, PROJECT_TOML_FILE, PACKAGE_PATH, REQUIREMENTS_PATH, CONFIG_FILE, PLUGINS_PATH
 from ...git.git import default_branch, valid_token, get_latest_tag, get_release_assets
-
-from concurrent.futures import ThreadPoolExecutor
-
-from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathError
 
 
 class PackageInstaller:
@@ -313,10 +310,8 @@ class PackageInstaller:
 
         if self.plugins_to_install:
             with ThreadPoolExecutor() as executor:
-                # Collect and process the results
                 plugin_results = list(executor.map(install_plugin, self.plugins_to_install.items()))
                 
-                # Log any failures
                 for package, result in zip(self.plugins_to_install.keys(), plugin_results):
                     if result is False:
                         logging.error(f"Failed to install plugin for package: {package}")
@@ -376,7 +371,6 @@ class PackageInstaller:
             if "live" not in ptd["requirements"]:
                 ptd["requirements"]["live"] = []
                 
-            # Append the package
             ptd["requirements"]["live"].append(package)
 
         with safe_open(PROJECT_TOML_FILE, 'wb') as pt:

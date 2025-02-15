@@ -49,7 +49,6 @@ def create_repository(username: str, repository_name: str, access_token: str) ->
 
         local_repo = git.Repo.init(os.getcwd())
 
-        # Add remote origin to local repository
         origin_url = f"https://github.com/{username}/{repository_name}.git"
         origin = local_repo.create_remote('origin', url=origin_url)
 
@@ -145,7 +144,6 @@ def get_latest_tag(author: str, repo: str, ref: str | None = None) -> str | None
 
     headers = {"Authorization": f"token {token}"}
     
-    # Get all tags first
     tags_url = f"https://api.github.com/repos/{author}/{repo}/tags"
     tags_response = requests.get(tags_url, headers=headers)
     
@@ -153,10 +151,8 @@ def get_latest_tag(author: str, repo: str, ref: str | None = None) -> str | None
         return None
     
     if not ref:
-        # If no ref specified, return the most recent tag
         return tags_response.json()[0]["name"]
     
-    # Get the commit SHA for the specified ref
     commit_url = f"https://api.github.com/repos/{author}/{repo}/commits/{ref}"
     commit_response = requests.get(commit_url, headers=headers)
     
@@ -165,7 +161,6 @@ def get_latest_tag(author: str, repo: str, ref: str | None = None) -> str | None
     
     target_sha = commit_response.json()["sha"]
     
-    # Find the most recent tag that points to this commit or its ancestors
     for tag in tags_response.json():
         if tag["commit"]["sha"] == target_sha:
             return tag["name"]

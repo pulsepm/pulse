@@ -1,18 +1,7 @@
 import os
 import tarfile
 from zipfile import ZipFile
-from platform import system
-from pulse.core.core_dir import REQUIREMENTS_PATH, PLUGINS_PATH, PACKAGE_PATH, CONFIG_FILE
-from typing import Literal
-from git import Repo
-from pulse.git.git import valid_token, default_branch
-from pulse.package.unpack.unpack import extract_member
-from pulse.package.package_handle import handle_extraction_zip, handle_extraction_tar
-
-import re
-import tomli
 import requests
-import shutil
 
 
 def download_and_unzip_github_release(
@@ -31,7 +20,6 @@ def download_and_unzip_github_release(
     Returns:
         None
     """
-    # Get the release information
     api_url = f"https://api.github.com/repos/{owner}/{repo}/releases/tags/{tag}"
     response = requests.get(api_url)
 
@@ -43,7 +31,6 @@ def download_and_unzip_github_release(
 
     release_info = response.json()
 
-    # Find the asset download URL
     asset_url = None
     for asset in release_info.get("assets", []):
         if asset["name"] == asset_name:
@@ -54,7 +41,6 @@ def download_and_unzip_github_release(
         print(f"Asset '{asset_name}' not found in the release.")
         return
 
-    # Download the asset
     try:
         response = requests.get(asset_url, allow_redirects=True)
     except requests.exceptions.RequestException as e:
@@ -69,7 +55,6 @@ def download_and_unzip_github_release(
         with open(asset_path, "wb") as asset_file:
             asset_file.write(response.content)
 
-        # Unzip the downloaded asset if it is a zip file
         if str(asset_name).endswith(".zip"):
             with ZipFile(asset_path, "r") as zip_ref:
                 zip_ref.extractall(target_folder)
@@ -82,7 +67,6 @@ def download_and_unzip_github_release(
             print(f"Unsupported asset type: {asset_name}")
             return
 
-        # Remove the downloaded asset file if needed
         if remove_asset:
             os.remove(asset_path)
             
@@ -108,7 +92,6 @@ def download_github_release(
     Returns:
         str | None: Path to the downloaded asset if successful, None if failed
     """
-    # Get the release information
     api_url = f"https://api.github.com/repos/{owner}/{repo}/releases/tags/{tag}"
     response = requests.get(api_url)
 
@@ -118,7 +101,6 @@ def download_github_release(
 
     release_info = response.json()
 
-    # Find the asset download URL
     asset_url = None
     for asset in release_info.get("assets", []):
         if asset["name"] == asset_name:
@@ -129,7 +111,6 @@ def download_github_release(
         print(f"Asset '{asset_name}' not found in the release.")
         return None
 
-    # Download the asset
     try:
         response = requests.get(asset_url, allow_redirects=True)
     except requests.exceptions.RequestException as e:
