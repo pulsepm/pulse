@@ -1,7 +1,7 @@
 import click
 
 import pulse.config.config as config
-from pulse.core.git.git import create_repository
+from pulse.git.git import create_repository
 from pulse.project.initialize import initialize
 
 

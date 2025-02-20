@@ -1,6 +1,8 @@
 import os
 from platform import system
-from typing import IO
+
+from contextlib import contextmanager
+import logging
 
 PROJECT_NAME = "pulsepm"
 
@@ -28,16 +30,23 @@ PLUGINS_PATH = os.path.join(data_dir, "plugins")
 REQUIREMENTS_PATH = os.path.join(os.getcwd(), "requirements")
 PODS_PATH = os.path.join(os.getcwd(), ".pods")
 PROJECT_TOML_FILE = os.path.join(os.getcwd(), "pulse.toml")
+PROJECT_JSON_COMPAT_FILE = os.path.join(os.getcwd(), "pawn.json")
 
-def safe_open(p: str, mode: str) -> IO:
+@contextmanager
+def safe_open(p: str, mode: str):
     try:
         file = open(p, mode)
-        return file
+        yield file
     except FileNotFoundError:
-        print(f"Error: The file '{p}' was not found.")
+        logging.error(f"The file '{p}' was not found.")
+        yield None
     except PermissionError:
-        print(f"Error: You do not have permission to open the file '{p}'.")
+        logging.error(f"You do not have permission to open the file '{p}'.")
+        yield None
     except IOError as e:
-        print(f"Error: An IOError occurred while opening the file '{p}'.\nDetails: {e}")
-    return None
+        logging.error(f"An IOError occurred while opening the file '{p}'.\nDetails: {e}")
+        yield None
+    finally:
+        if 'file' in locals() and not file.closed:
+            file.close() 
 
