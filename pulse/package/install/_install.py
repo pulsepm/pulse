@@ -220,6 +220,10 @@ class PackageInstaller:
         author, repo, sep, ver = package_parse(package)
         if sep != ":":
             ver = get_latest_tag(author, repo, ver)
+            if not ver:
+                logging.error(f"Couldn't find latest tag for {author}/{repo}")
+                return False
+                
             logging.info(f"Latest tag for {author}/{repo}: {ver}")
         
         plugin_dir = self.plugins_path / repo / ver
