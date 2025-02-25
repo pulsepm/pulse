@@ -2,10 +2,10 @@ import logging
 import json
 import os
 import datetime
-import pulse.config.config as config
 import random
 
 from typing import Any, Union
+from ..user import User
 from .stroke_codes import stroke_errors
 from ..core.core_dir import STROKE_PATH
 
@@ -24,8 +24,9 @@ def dump(code: int, meta: str = None, __as_command: bool = False) -> None:
 
     rand_5: int = random.randint(10000, 99999)
 
-    data: dict[str, Any] = config.load()
-    if data.get("stroke", False) is False and __as_command is False:
+    usr = User()
+
+    if not usr.stroke_dumps and __as_command is False:
         return
 
     logging.debug("Dumping the stroke...")

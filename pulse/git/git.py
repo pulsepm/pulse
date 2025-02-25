@@ -2,12 +2,14 @@ from typing import Union, Literal
 import git
 import os
 import tomli
-from ..core.core_dir import safe_open, CONFIG_FILE
+from ..core.core_dir import safe_open
+from ..user import User
 from github import Github
 import logging
 import requests
 from pathlib import Path
 
+usr = User()
 
 def create_repository(username: str, repository_name: str, access_token: str) -> None:
     """
@@ -96,12 +98,8 @@ def get_github_repo(
     if not syntax_type:
         url = f"https://api.github.com/repos/{author}/{repo}/contents"
 
-    with safe_open(CONFIG_FILE, 'rb') as toml_file:
-        token_data = tomli.load(toml_file)
-        token = token_data["token"]
-
     headers = {
-        "Authorization": f"token {token}"
+        "Authorization": f"token {usr.git_token}"
     }
 
     response = requests.get(url, headers=headers)
@@ -112,13 +110,10 @@ def get_github_repo(
 
 
 def default_branch(package: list[str]) -> str | int:
-    with safe_open(CONFIG_FILE, 'rb') as token_file:
-        token_data = tomli.load(token_file)
-        token = token_data["token"]
     
     url = f"https://api.github.com/repos/{package[0]}/{package[1]}"
     headers = {
-        "Authorization": f"token {token}"
+        "Authorization": f"token {usr.git_token}"
     }
     response = requests.get(url, headers=headers)
     if not response.ok:
@@ -140,11 +135,7 @@ def get_latest_tag(author: str, repo: str, ref: str | None = None) -> str | None
     Returns:
         str | None: The tag name if found, None if no tags exist
     """
-    with safe_open(CONFIG_FILE, 'rb') as toml_file:
-        token_data = tomli.load(toml_file)
-        token = token_data["token"]
-
-    g = Github(token)
+    g = Github(usr.git_token)
     try:
         repository = g.get_repo(f"{author}/{repo}")
         tags = list(repository.get_tags())
@@ -197,11 +188,8 @@ def get_release_assets(author: str, repo: str, tag: str) -> list | None:
     Returns:
         list | None: List of asset objects or None if not found
     """
-    with safe_open(CONFIG_FILE, 'rb') as toml_file:
-        token_data = tomli.load(toml_file)
-        token = token_data["token"]
 
-    headers = {"Authorization": f"token {token}"}
+    headers = {"Authorization": f"token {usr.git_token}"}
     
     url = f"https://api.github.com/repos/{author}/{repo}/releases/tags/{tag}"
     response = requests.get(url, headers=headers)
@@ -227,11 +215,7 @@ def download_file_from_github(repo_owner: str, repo_name: str, file_path: str, t
         bool: True if download successful, False otherwise
     """
     try:
-        with safe_open(CONFIG_FILE, 'rb') as toml_file:
-            token_data = tomli.load(toml_file)
-            token = token_data["token"]
-
-        g = Github(token)
+        g = Github(usr.git_token)
         repo = g.get_repo(f"{repo_owner}/{repo_name}")
         default_branch = repo.default_branch
         
@@ -268,11 +252,8 @@ def check_files_github(repo_owner, repo_name, ref, files_to_check=['pulse.toml',
     Returns:
         tuple: (dict of file existence, file that was found)
     """
-    with safe_open(CONFIG_FILE, 'rb') as toml_file:
-        token_data = tomli.load(toml_file)
-        token = token_data["token"]
 
-    g = Github(token)  
+    g = Github(usr.git_token)  
     repo = g.get_repo(f"{repo_owner}/{repo_name}")
     default_branch = repo.default_branch
     

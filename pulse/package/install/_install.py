@@ -15,9 +15,23 @@ from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathErro
 
 from ..package_handle import handle_extraction_zip, handle_extraction_tar
 from ..parse._parse import package_parse
+from ...user import User
 from ...git.git_download import download_github_release
-from ...core.core_dir import safe_open, PROJECT_TOML_FILE, PACKAGE_PATH, REQUIREMENTS_PATH, CONFIG_FILE, PLUGINS_PATH
-from ...git.git import default_branch, valid_token, get_latest_tag, get_release_assets, check_files_github, download_file_from_github
+from ...core.core_dir import (
+    safe_open,
+    PROJECT_TOML_FILE,
+    PACKAGE_PATH,
+    REQUIREMENTS_PATH,
+    PLUGINS_PATH,
+)
+from ...git.git import (
+    default_branch,
+    valid_token,
+    get_latest_tag,
+    get_release_assets,
+    check_files_github,
+    download_file_from_github,
+)
 
 
 class PackageInstaller:
@@ -31,9 +45,9 @@ class PackageInstaller:
 
     def install_all_packages(self):
         """Install all packages listed in project configuration."""
-        with safe_open(PROJECT_TOML_FILE, 'rb') as t:
+        with safe_open(PROJECT_TOML_FILE, "rb") as t:
             config = tomli.load(t)
-        self._install_deps(config["requirements"]["live"]) 
+        self._install_deps(config["requirements"]["live"])
 
     def install_package(self, package: str) -> bool:
         """Install a single package and its dependencies."""
@@ -41,19 +55,25 @@ class PackageInstaller:
             logging.fatal("Invalid project: No pulse.toml found")
             return False
 
-        with safe_open(PROJECT_TOML_FILE, 'rb') as t:
+        with safe_open(PROJECT_TOML_FILE, "rb") as t:
             config = tomli.load(t)
 
-        if not "requirements" or "requirements" in config and self._package_in_requirements_list(package, config["requirements"]["live"]):
+        if (
+            not "requirements"
+            or "requirements" in config
+            and self._package_in_requirements_list(
+                package, config["requirements"]["live"]
+            )
+        ):
             return False
 
         if self._install_single_package(package):
             self._append_dependency(package)
-            
+
             deps = self._gather_dependencies(package)
             self._install_deps(deps)
             return True
-        
+
         return False
 
     def _check_repository(self, path: Path) -> Repo | None:
@@ -73,7 +93,7 @@ class PackageInstaller:
         except (InvalidGitRepositoryError, NoSuchPathError):
             logging.error(f"Repository doesn't exist at {path}")
             return None
-        
+
         except Exception as e:
             logging.error(f"Unexpected error checking repository: {e}")
             return None
@@ -88,33 +108,36 @@ class PackageInstaller:
         author, repo, separator, version = parsed_package
 
         if repo in self.installed_deps:
-            logging.warning(f"Package {author}/{repo} already installed as {self.installed_deps[repo]['author']}/{repo}")
+            logging.warning(
+                f"Package {author}/{repo} already installed as {self.installed_deps[repo]['author']}/{repo}"
+            )
             return False
 
-        save_path = self.package_path / author / repo / (version if version else "default")
-    
+        save_path = (
+            self.package_path / author / repo / (version if version else "default")
+        )
+
         if self._package_cached(save_path):
             logging.info(f"{package} has been cached already. Moving it to project...")
             try:
                 dst = self.requirements_path / repo
-                 
+
                 # Handle .git directory
-                
-                git_dir = dst / '.git'
+
+                git_dir = dst / ".git"
                 if git_dir.exists():
                     shutil.rmtree(git_dir, onerror=self._handle_copy_error)
 
                 shutil.copytree(save_path, dst, dirs_exist_ok=True)
-               
-                
+
                 self.installed_deps[repo] = {
                     "author": author,
-                    "version": version if version else "default"
+                    "version": version if version else "default",
                 }
-                
+
                 logging.info(f"Successfully moved cached package {package}")
                 return True
-                
+
             except Exception as e:
                 logging.error(f"Failed to copy cached package: {e}")
                 return False
@@ -130,36 +153,39 @@ class PackageInstaller:
         try:
             if not path.is_dir():
                 return False
-                
+
             repo = self._check_repository(path)
             if repo is None:
                 return False
-                
+
             # Additional checks could be added here
             # For example, verify required files exis
             return True
-            
+
         except Exception as e:
             logging.error(f"Error checking cache: {e}")
             return False
 
-    def _clone_fresh_repository(self, author: str, repo: str, separator: str, version: str, save_path: Path) -> bool:
+    def _clone_fresh_repository(
+        self, author: str, repo: str, separator: str, version: str, save_path: Path
+    ) -> bool:
         """Clone a fresh copy of the repository."""
         try:
-            with safe_open(CONFIG_FILE, 'rb') as token_file:
-                token = tomli.load(token_file)["token"]
-            
-            if not valid_token(token):
+            usr = User()
+
+            if not valid_token(usr.git_token):
                 logging.error("Invalid GitHub token")
                 return False
 
             version = version if version else default_branch([author, repo])
             files_check, found_file = check_files_github(author, repo, version)
             if not any(files_check.values()):
-                logging.error(f"Repository {author}/{repo} does not contain required configuration files (pawn.json or pulse.toml)")
+                logging.error(
+                    f"Repository {author}/{repo} does not contain required configuration files (pawn.json or pulse.toml)"
+                )
                 return False
 
-            repo_url = f"https://{{{token}}}@github.com/{author}/{repo}.git"
+            repo_url = f"https://{{{usr.git_token}}}@github.com/{author}/{repo}.git"
 
             if separator == "#":
                 git_repo = Repo.clone_from(repo_url, str(save_path), single_branch=True)
@@ -167,19 +193,23 @@ class PackageInstaller:
             elif separator == ":":
                 git_repo = Repo.clone_from(repo_url, str(save_path))
                 git_repo.git.checkout(version)
-            else: 
-                git_repo = Repo.clone_from(repo_url, str(save_path), single_branch=True, branch=version)
-            
+            else:
+                git_repo = Repo.clone_from(
+                    repo_url, str(save_path), single_branch=True, branch=version
+                )
+
             if found_file:
                 download_file_from_github(author, repo, found_file, save_path)
 
-            shutil.copytree(save_path, self.requirements_path / repo, dirs_exist_ok=True)
+            shutil.copytree(
+                save_path, self.requirements_path / repo, dirs_exist_ok=True
+            )
 
             self.installed_deps[repo] = {
                 "author": author,
-                "version": version if version else "default"
+                "version": version if version else "default",
             }
-            
+
             logging.info(f"Installed {author}/{repo}{separator}{version}")
             return True
 
@@ -188,7 +218,7 @@ class PackageInstaller:
             if save_path.exists():
                 shutil.rmtree(str(save_path), onerror=self._handle_copy_error)
             return False
-        
+
         except Exception as e:
             logging.error(f"Unexpected error during clone: {e}")
             if save_path.exists():
@@ -202,7 +232,7 @@ class PackageInstaller:
                 repo.remote().pull()
 
             if version:
-                if '#' in version:
+                if "#" in version:
                     repo.head.reset(commit=version, index=True, working_tree=True)
                 else:
                     repo.git.checkout(version)
@@ -223,9 +253,9 @@ class PackageInstaller:
             if not ver:
                 logging.error(f"Couldn't find latest tag for {author}/{repo}")
                 return False
-                
+
             logging.info(f"Latest tag for {author}/{repo}: {ver}")
-        
+
         plugin_dir = self.plugins_path / repo / ver
 
         if plugin_dir.exists() and (files := os.listdir(plugin_dir)):
@@ -236,30 +266,32 @@ class PackageInstaller:
                         handle_extraction_zip(
                             plugin_dir / file,
                             resource.get("includes", []),
-                            ('', repo, ''),
+                            ("", repo, ""),
                             resource.get("files", []),
-                            resource.get("plugins", [])
+                            resource.get("plugins", []),
                         )
                     elif file.endswith(".tar.gz"):
                         handle_extraction_tar(
                             plugin_dir / file,
                             resource.get("includes", []),
-                            ('', repo, ''),
+                            ("", repo, ""),
                             resource.get("files", []),
-                            resource.get("plugins", [])
+                            resource.get("plugins", []),
                         )
                 else:
-                    shutil.copy2(plugin_dir / file, self.requirements_path / "plugins") 
+                    shutil.copy2(plugin_dir / file, self.requirements_path / "plugins")
             return True
-        
+
         release_assets = get_release_assets(author, repo, ver)
         if not release_assets:
-            logging.error(f"No release assets found for {author}/{repo} at version {ver}")
+            logging.error(
+                f"No release assets found for {author}/{repo} at version {ver}"
+            )
             return False
-            
+
         asset_name_pattern = resource["name"]
         matching_asset = None
-        
+
         for asset in release_assets:
             if re.match(asset_name_pattern, asset["name"]):
                 matching_asset = asset
@@ -271,31 +303,33 @@ class PackageInstaller:
                 repo,
                 ver,
                 matching_asset["name"],
-                self.plugins_path / repo / ver
+                self.plugins_path / repo / ver,
             )
 
             if ap:
                 if resource.get("archive", False):
                     if ap.endswith(".zip"):
                         handle_extraction_zip(
-                                ap,
-                                resource.get("includes", []),
-                                ('', repo, ''), #TODO: change to repo name
-                                resource.get("files", []),
-                                resource.get("plugins", [])
-                            )
+                            ap,
+                            resource.get("includes", []),
+                            ("", repo, ""),  # TODO: change to repo name
+                            resource.get("files", []),
+                            resource.get("plugins", []),
+                        )
                     elif ap.endswith(".tar.gz"):
                         handle_extraction_tar(
                             ap,
                             resource.get("includes", []),
-                            ('', repo, ''),
+                            ("", repo, ""),
                             resource.get("files", []),
-                            resource.get("plugins", [])
+                            resource.get("plugins", []),
                         )
                 else:
-                    shutil.copy2(ap, self.requirements_path / "plugins")          
+                    shutil.copy2(ap, self.requirements_path / "plugins")
         else:
-            logging.error(f"No asset matching pattern '{asset_name_pattern}' found in release {ver}")
+            logging.error(
+                f"No asset matching pattern '{asset_name_pattern}' found in release {ver}"
+            )
 
     def _install_deps(self, deps):
         """Install multiple dependencies concurrently."""
@@ -321,14 +355,22 @@ class PackageInstaller:
 
         if self.plugins_to_install:
             with ThreadPoolExecutor() as executor:
-                plugin_results = list(executor.map(install_plugin, self.plugins_to_install.items()))
-                
-                for package, result in zip(self.plugins_to_install.keys(), plugin_results):
+                plugin_results = list(
+                    executor.map(install_plugin, self.plugins_to_install.items())
+                )
+
+                for package, result in zip(
+                    self.plugins_to_install.keys(), plugin_results
+                ):
                     if result is False:
-                        logging.error(f"Failed to install plugin for package: {package}")
+                        logging.error(
+                            f"Failed to install plugin for package: {package}"
+                        )
                     elif result is True:
-                        logging.info(f"Successfully installed plugin for package: {package}")
-                
+                        logging.info(
+                            f"Successfully installed plugin for package: {package}"
+                        )
+
                 # Clear the plugins queue after installation
                 self.plugins_to_install = {}
 
@@ -337,21 +379,23 @@ class PackageInstaller:
         if not parsed_package:
             logging.error(f"Invalid package format: {package}")
             return False
-        
-        author, repo, _, ver = parsed_package
-        cached_path = os.path.join(PACKAGE_PATH, author, repo, ver if ver else "default")
 
-        with safe_open(os.path.join(cached_path, "pulse.toml"), 'rb') as t:
+        author, repo, _, ver = parsed_package
+        cached_path = os.path.join(
+            PACKAGE_PATH, author, repo, ver if ver else "default"
+        )
+
+        with safe_open(os.path.join(cached_path, "pulse.toml"), "rb") as t:
             if t:
                 l = tomli.load(t)
                 try:
                     reqs = l["requirements"]["live"]
                 except KeyError:
                     reqs = []
-                
+
                 # NO plugins in pulse.toml
             else:
-                with safe_open(os.path.join(cached_path, "pawn.json"), 'r') as t:
+                with safe_open(os.path.join(cached_path, "pawn.json"), "r") as t:
                     if t:
                         l = json.load(t)
                         try:
@@ -374,17 +418,17 @@ class PackageInstaller:
     def _append_dependency(self, package):
         """Appends the dependency to the project config file."""
         ptd = None
-        with safe_open(PROJECT_TOML_FILE, 'rb') as pt:
+        with safe_open(PROJECT_TOML_FILE, "rb") as pt:
             ptd = tomli.load(pt)
 
             if "requirements" not in ptd:
                 ptd["requirements"] = {}
             if "live" not in ptd["requirements"]:
                 ptd["requirements"]["live"] = []
-                
+
             ptd["requirements"]["live"].append(package)
 
-        with safe_open(PROJECT_TOML_FILE, 'wb') as pt:
+        with safe_open(PROJECT_TOML_FILE, "wb") as pt:
             tomli_w.dump(ptd, pt)
 
     def _package_in_requirements_list(self, package, requirements_list):
@@ -397,7 +441,7 @@ class PackageInstaller:
             logging.info("Requirements list is empty. Proceeding with installation.")
             return False
 
-        parsed_package = package_parse(package) #check if valid also
+        parsed_package = package_parse(package)  # check if valid also
         if not parsed_package:
             logging.error(f"Invalid package format: {package}")
             return False
@@ -417,13 +461,14 @@ class PackageInstaller:
         if duplicates:
             for duplicate in duplicates:
                 logging.warning(
-                        f"Multiple occurrences of {repo} -> {duplicate}. Skipping..."
-                    )
+                    f"Multiple occurrences of {repo} -> {duplicate}. Skipping..."
+                )
             return True
 
-        logging.info(f"{repo} not found in the requirements. Proceeding with installation.")
+        logging.info(
+            f"{repo} not found in the requirements. Proceeding with installation."
+        )
         return False
-
 
     def _is_plugin(self, resources):
         """Check if a package is a plugin."""
@@ -432,4 +477,3 @@ class PackageInstaller:
                 return res
 
         return False
-
