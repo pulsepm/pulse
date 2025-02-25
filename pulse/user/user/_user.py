@@ -50,9 +50,8 @@ class User:
         keyboard.read_event(suppress=True)
         self.git_user = click.prompt("Your GitHub username", type=str)
         self.git_token = click.prompt("Your GitHub access token (https://github.com/settings/personal-access-tokens/new)", type=str)
-        self.log_power = click.prompt("Your logging power (https://media.geeksforgeeks.org/wp-content/uploads/Python-log-levels.png)", type=click.Choice([str(v) for v in VALID_VALUES]), show_choices=True) # Change to pulse 
+        self.log_power = int(click.prompt("Your logging power (https://media.geeksforgeeks.org/wp-content/uploads/Python-log-levels.png)", type=click.Choice([str(v) for v in VALID_VALUES]), show_choices=True)) # Change to pulse 
         self.stroke_dumps = click.confirm("Dump strokes? (provide_link)", default=True)
-        self.log_power = max(logging.NOTSET, min(self.log_power, logging.CRITICAL))
         self.mark_for_delete = False
         self.just_created = True
         user = {
