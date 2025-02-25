@@ -15,8 +15,9 @@ from git import Repo, GitCommandError, InvalidGitRepositoryError, NoSuchPathErro
 
 from ..package_handle import handle_extraction_zip, handle_extraction_tar
 from ..parse._parse import package_parse
+from ...user import User
 from ...git.git_download import download_github_release
-from ...core.core_dir import safe_open, PROJECT_TOML_FILE, PACKAGE_PATH, REQUIREMENTS_PATH, CONFIG_FILE, PLUGINS_PATH
+from ...core.core_dir import safe_open, PROJECT_TOML_FILE, PACKAGE_PATH, REQUIREMENTS_PATH, PLUGINS_PATH
 from ...git.git import default_branch, valid_token, get_latest_tag, get_release_assets, check_files_github, download_file_from_github
 
 
@@ -146,10 +147,9 @@ class PackageInstaller:
     def _clone_fresh_repository(self, author: str, repo: str, separator: str, version: str, save_path: Path) -> bool:
         """Clone a fresh copy of the repository."""
         try:
-            with safe_open(CONFIG_FILE, 'rb') as token_file:
-                token = tomli.load(token_file)["token"]
+            usr = User()
             
-            if not valid_token(token):
+            if not valid_token(usr.git_token):
                 logging.error("Invalid GitHub token")
                 return False
 
@@ -159,7 +159,7 @@ class PackageInstaller:
                 logging.error(f"Repository {author}/{repo} does not contain required configuration files (pawn.json or pulse.toml)")
                 return False
 
-            repo_url = f"https://{{{token}}}@github.com/{author}/{repo}.git"
+            repo_url = f"https://{{{usr.git_token}}}@github.com/{author}/{repo}.git"
 
             if separator == "#":
                 git_repo = Repo.clone_from(repo_url, str(save_path), single_branch=True)

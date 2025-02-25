@@ -4,7 +4,8 @@ from zipfile import ZipFile
 import requests
 from github import Github
 import logging
-from ..core.core_dir import safe_open, CONFIG_FILE
+from ..core.core_dir import safe_open
+from ..user import User
 import tomli
 
 
@@ -97,11 +98,9 @@ def download_github_release(
         str | None: Path to the downloaded asset if successful, None if failed
     """
     try:
-        with safe_open(CONFIG_FILE, 'rb') as toml_file:
-            token_data = tomli.load(toml_file)
-            token = token_data["token"]
+        usr = User()
 
-        g = Github(token)
+        g = Github(usr.git_token)
         repository = g.get_repo(f"{owner}/{repo}")
         
         try:
@@ -126,7 +125,7 @@ def download_github_release(
             
             headers = {
                 "Accept": "application/octet-stream",
-                "Authorization": f"token {token}"
+                "Authorization": f"token {usr.git_token}"
             }
             
             response = requests.get(
