@@ -1,6 +1,6 @@
 import click
 
-import pulse.config.config as config
+from ..user import User
 from pulse.git.git import create_repository
 from pulse.project.initialize import initialize
 
@@ -17,19 +17,13 @@ def init(local: bool) -> None:
     name = "boiler"
     repo = "boiler"
     project = "boiler"
-    default_name = "NO_NAME_BRO"
-    data = {}
-
-    # check if .config exists and then load default_name.
-    if config.exists():
-        data = config.load()
-        default_name = data["last_username"]
-
+    
+    usr = User()
+    
     name = click.prompt(
         "Your GitHub username",
-        default=default_name if default_name != "NO_NAME_BRO" else None,
+        default=usr.git_user,
     )
-    data["last_username"] = name
 
     project = click.prompt(
         "Project name"
@@ -46,7 +40,6 @@ def init(local: bool) -> None:
 
     output = str(entry).replace(".pwn", ".amx")
     initialize(project, name, repo, pods, local, entry, output)
-    config.write(data, "wb")
 
     if create:
-        create_repository(name, repo, data["token"])
+        create_repository(name, repo, usr.git_token)
