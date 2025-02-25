@@ -26,10 +26,10 @@ class User:
                 self._create()
                 return
             dt = tomli.load(u)
-            self.git_user = dt["user"]
-            self.git_token = dt["token"]
-            self.log_power = dt["log"]
-            self.stroke_dumps = dt["stroke"]
+            self.git_user = dt.get("user", "Unknown")
+            self.git_token = dt.get("token", "NaN")
+            self.log_power = dt.get("log", 10)
+            self.stroke_dumps = dt.get("stroke", False)
             self.just_created = False
             self.mark_for_delete = False
 
