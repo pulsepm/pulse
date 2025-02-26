@@ -9,6 +9,7 @@ from pulse.package.package_pack import package
 from pulse.release.release import release
 from pulse.package.package_install import install
 from pulse.package.package_ensure import ensure
+from pulse.package.package_uninstall import uninstall
 from pulse.user import user
 import pulse.core.core_constants as core_constants
 
@@ -41,4 +42,5 @@ pulse.add_command(package)
 pulse.add_command(release)
 pulse.add_command(install)
 pulse.add_command(ensure)
+pulse.add_command(uninstall)
 pulse.add_command(user)
