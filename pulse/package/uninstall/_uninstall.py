@@ -56,9 +56,9 @@ class PackageUninstaller:
                 try:
                     shutil.rmtree(
                         (
-                            self.package_path / author / repo / version
+                            self.package_path / author / repo / (version
                             if version
-                            else "default"
+                            else "default")
                         ),
                         onerror=self._handle_copy_error,
                     )
